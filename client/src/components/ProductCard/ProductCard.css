@@ -1,0 +1,119 @@
+/* Product Card Styles */
+.product-card {
+    background-color: var(--color-cream);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.product-card-image {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background-color: var(--color-bg-light);
+}
+
+.product-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.product-card:hover .product-card-image img {
+    transform: scale(1.08);
+}
+
+.product-card-badges {
+    position: absolute;
+    top: var(--space-md);
+    left: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.product-card-content {
+    padding: var(--space-lg);
+}
+
+.product-card-category {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-xs);
+}
+
+.product-card-title {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: var(--space-sm);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-card-title a:hover {
+    color: var(--color-accent);
+}
+
+.product-card-price {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.product-card-price .current-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+.product-card-price .original-price {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+}
+
+.product-card-action {
+    position: absolute;
+    bottom: var(--space-lg);
+    right: var(--space-lg);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all var(--transition-normal);
+}
+
+.product-card:hover .product-card-action {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.product-card-action:hover {
+    background-color: var(--color-accent);
+}
+
+.product-card-action svg {
+    width: 18px;
+    height: 18px;
+}
