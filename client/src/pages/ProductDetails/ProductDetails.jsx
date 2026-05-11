@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { allProducts } from '../../data/productsData';
 import './ProductDetails.css';
 
 // Helper to generate SEO-friendly JSON-LD structured data
@@ -118,7 +117,7 @@ const ProductDetails = () => {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-    // Fetch product data — tries API first, falls back to local data
+    // Fetch product data — tries API first
     useEffect(() => {
         const fetchProduct = async () => {
             setLoading(true);
@@ -143,19 +142,7 @@ const ProductDetails = () => {
                     }
                 }
             } catch {
-                // Fallback to local data
-                const localProduct = allProducts.find((p) => p.slug === slug);
-                if (localProduct) {
-                    setProduct(localProduct);
-                    setRelatedProducts(
-                        allProducts
-                            .filter((p) => p.categorySlug === localProduct.categorySlug && p.slug !== slug)
-                            .slice(0, 4)
-                    );
-                    setError(null);
-                } else {
-                    setError('Product not found');
-                }
+                setError('Product not found or failed to load');
             } finally {
                 setLoading(false);
             }
