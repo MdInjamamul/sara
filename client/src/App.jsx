@@ -6,6 +6,8 @@ import './styles/index.css';
 
 import AdminLayout from './pages/Admin/AdminLayout';
 import Dashboard from './pages/Admin/Dashboard';
+import ProductList from './pages/Admin/Products/ProductList';
+import ProductForm from './pages/Admin/Products/ProductForm';
 
 function App() {
   return (
@@ -20,8 +22,9 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
-            <Route path="products" element={<div style={{padding: '24px', color: 'white'}}>Products Management (Coming Phase 2)</div>} />
-            <Route path="products/new" element={<div style={{padding: '24px', color: 'white'}}>New Product (Coming Phase 2)</div>} />
+            <Route path="products" element={<ProductList />} />
+            <Route path="products/new" element={<ProductForm />} />
+            <Route path="products/edit/:id" element={<ProductForm />} />
             <Route path="homepage" element={<div style={{padding: '24px', color: 'white'}}>Homepage Management (Coming Phase 3)</div>} />
           </Route>
         </Routes>
