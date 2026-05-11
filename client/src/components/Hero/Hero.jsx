@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import './Hero.css';
 
 const Hero = () => {
@@ -7,6 +8,7 @@ const Hero = () => {
         {
             title: 'Medicinal Herbs',
             subtitle: 'NATURAL HEALING',
+            slug: 'medicinal-herbs',
             description: 'Ancient Himalayan herbs for natural wellness and vitality',
             products: [
                 { image: '/assets/images/banners/medicinal_herbs/ashwagandha.png', name: 'Ashwagandha', label: 'Natural Herbal' },
@@ -18,6 +20,7 @@ const Hero = () => {
         {
             title: 'Natural Cosmetics',
             subtitle: 'PURE BEAUTY',
+            slug: 'cosmetics',
             description: 'Organic skincare crafted with nature\'s finest ingredients',
             products: [
                 { image: '/assets/images/banners/natural_cosmetics/basil_soap.png', name: 'Basil Soap', label: 'Natural Herbal' },
@@ -29,6 +32,7 @@ const Hero = () => {
         {
             title: 'Essential Oils',
             subtitle: 'PURE AROMATHERAPY',
+            slug: 'essential-oils',
             description: 'Premium botanical extracts for wellness and relaxation',
             products: [
                 { image: '/assets/images/banners/natural_essential_oil/eucalyptus_oil.png', name: 'Eucalyptus Oil', label: 'Natural Herbal' },
@@ -40,6 +44,7 @@ const Hero = () => {
         {
             title: 'Herbal Oils',
             subtitle: 'THERAPEUTIC WELLNESS',
+            slug: 'herbal-oils',
             description: 'Cold-pressed natural oils for health and vitality',
             products: [
                 { image: '/assets/images/banners/natural_herbal_oil/black_seed_oil.png', name: 'Black Seed Oil', label: 'Natural Herbal' },
@@ -51,6 +56,7 @@ const Hero = () => {
         {
             title: 'Organic Spices',
             subtitle: 'PURE & NATURAL',
+            slug: 'spices',
             description: 'Authentic spices sourced from organic farms',
             products: [
                 { image: '/assets/images/banners/natural_organic_spices/cinnamon.png', name: 'Cinnamon', label: 'Natural Herbal' },
@@ -62,6 +68,7 @@ const Hero = () => {
         {
             title: 'Superfoods',
             subtitle: 'NUTRIENT RICH',
+            slug: 'superfoods',
             description: 'Power-packed organic superfoods for optimal health',
             products: [
                 { image: '/assets/images/banners/natural_organic_superfoods/flax_seeds.png', name: 'Flax Seeds', label: 'Natural Herbal' },
@@ -73,6 +80,7 @@ const Hero = () => {
         {
             title: 'Sara Nursery',
             subtitle: 'GREEN LIVING',
+            slug: 'nursery',
             description: 'Healthy plants for your home and garden',
             products: [
                 { image: '/assets/images/banners/sara_nursery/aloe_vera_plant.png', name: 'Aloe Vera Plant', label: 'Natural Herbal' },
@@ -84,6 +92,7 @@ const Hero = () => {
         {
             title: 'Spiritual',
             subtitle: 'SACRED ESSENTIALS',
+            slug: 'spiritual-items',
             description: 'Traditional spiritual items for meditation and prayer',
             products: [
                 { image: '/assets/images/banners/spritual/insence_sticks.png', name: 'Incense Sticks', label: 'Natural Herbal' },
@@ -148,13 +157,13 @@ const Hero = () => {
                         >
                             {currentSlideData.title}
                         </h1>
-                        <a
-                            href="/shop"
+                        <Link
+                            to={`/products?category=${currentSlideData.slug}`}
                             className="hero-see-more-btn"
                             style={{ backgroundColor: currentSlideData.accentColor }}
                         >
                             See More
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Right Side - Products */}

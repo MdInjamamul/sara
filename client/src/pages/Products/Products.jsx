@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Products.css';
@@ -675,12 +676,47 @@ const categories = [
 ];
 
 const Products = () => {
-    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialCategory = searchParams.get('category') || 'all';
+    
+    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Sync with URL changes (e.g., when clicking back button or links from home page)
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get('category') || 'all';
+        if (categoryFromUrl !== selectedCategory) {
+            setSelectedCategory(categoryFromUrl);
+            setCurrentPage(1);
+        }
+    }, [searchParams]);
+
+    const itemsPerPage = 12;
 
     const filteredProducts = selectedCategory === 'all'
         ? products
         : products.filter(p => p.category === selectedCategory);
+
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category);
+        setCurrentPage(1);
+        setIsDropdownOpen(false);
+        
+        if (category === 'all') {
+            searchParams.delete('category');
+            setSearchParams(searchParams);
+        } else {
+            setSearchParams({ category });
+        }
+    };
+
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const selectedCategoryLabel = categories.find(c => c.value === selectedCategory)?.label || 'All Products';
 
@@ -713,8 +749,7 @@ const Products = () => {
                                                 className={selectedCategory === cat.value ? 'active' : ''}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setSelectedCategory(cat.value);
-                                                    setIsDropdownOpen(false);
+                                                    handleCategoryChange(cat.value);
                                                 }}
                                             >
                                                 {cat.label}
@@ -727,12 +762,12 @@ const Products = () => {
                     </div>
 
                     <div className="products-grid">
-                        {filteredProducts.map(product => (
-                            <div key={product.id} className="product-card">
+                        {paginatedProducts.map(product => (
+                            <Link to={`/products/${product.slug}`} key={product.id} className="product-card" style={{ textDecoration: 'none', color: 'inherit' }}>
                                 <div className="product-image">
                                     {product.isNew && <span className="product-badge">New</span>}
                                     <img src={product.image} alt={product.name} />
-                                    <button className="product-buy-btn">Buy now</button>
+                                    <span className="product-buy-btn">View Details</span>
                                 </div>
                                 <div className="product-info">
                                     <h3 className="product-name">{product.name}</h3>
@@ -743,9 +778,41 @@ const Products = () => {
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
+
+                    {totalPages > 1 && (
+                        <div className="pagination">
+                            <button 
+                                className="pagination-btn" 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="pagination-numbers">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button 
+                                        key={i + 1}
+                                        className={`pagination-number ${currentPage === i + 1 ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button 
+                                className="pagination-btn" 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             </main>
 
