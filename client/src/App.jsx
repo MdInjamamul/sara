@@ -8,6 +8,7 @@ import AdminLayout from './pages/Admin/AdminLayout';
 import Dashboard from './pages/Admin/Dashboard';
 import ProductList from './pages/Admin/Products/ProductList';
 import ProductForm from './pages/Admin/Products/ProductForm';
+import HomepageManager from './pages/Admin/Homepage/HomepageManager';
 
 function App() {
   return (
@@ -25,7 +26,7 @@ function App() {
             <Route path="products" element={<ProductList />} />
             <Route path="products/new" element={<ProductForm />} />
             <Route path="products/edit/:id" element={<ProductForm />} />
-            <Route path="homepage" element={<div style={{padding: '24px', color: 'white'}}>Homepage Management (Coming Phase 3)</div>} />
+            <Route path="homepage" element={<HomepageManager />} />
           </Route>
         </Routes>
       </div>

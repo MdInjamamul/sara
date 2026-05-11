@@ -1,822 +1,215 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import Navbar from '../../components/Navbar/Navbar';
-import Footer from '../../components/Footer/Footer';
+import { useSearchParams } from 'react-router-dom';
+import ProductCard from '../../components/ProductCard/ProductCard';
 import './Products.css';
-
-// Complete products data organized by categories
-const products = [
-    // ========== Medicinal Herbs (8 products) ==========
-    {
-        id: 1,
-        name: 'Yarsagumba (Yarsha)',
-        slug: 'yarsagumba-yarsha',
-        price: 89.99,
-        originalPrice: 119.99,
-        image: '/assets/images/products/yarsagumba_yarsha.png',
-        category: 'medicinal-herbs',
-        isNew: true
-    },
-    {
-        id: 2,
-        name: 'Ginseng',
-        slug: 'ginseng',
-        price: 34.99,
-        originalPrice: 44.99,
-        image: '/assets/images/products/ginseng.png',
-        category: 'medicinal-herbs',
-        isNew: true
-    },
-    {
-        id: 3,
-        name: 'Shilajit',
-        slug: 'shilajit',
-        price: 49.99,
-        originalPrice: null,
-        image: '/assets/images/products/shilajit.png',
-        category: 'medicinal-herbs',
-        isNew: false
-    },
-    {
-        id: 4,
-        name: 'Ashwagandha',
-        slug: 'ashwagandha',
-        price: 24.99,
-        originalPrice: 32.99,
-        image: '/assets/images/products/ashwagandha.png',
-        category: 'medicinal-herbs',
-        isNew: true
-    },
-    {
-        id: 5,
-        name: 'Asparagus Powder',
-        slug: 'asparagus-powder',
-        price: 19.99,
-        originalPrice: null,
-        image: '/assets/images/products/asparagus_powder.png',
-        category: 'medicinal-herbs',
-        isNew: false
-    },
-    {
-        id: 6,
-        name: 'Mucuna',
-        slug: 'mucuna',
-        price: 27.99,
-        originalPrice: 34.99,
-        image: '/assets/images/products/mucuna.png',
-        category: 'medicinal-herbs',
-        isNew: true
-    },
-    {
-        id: 7,
-        name: 'Saw Palmetto',
-        slug: 'saw-palmetto',
-        price: 29.99,
-        originalPrice: null,
-        image: '/assets/images/products/saw_palmetto.png',
-        category: 'medicinal-herbs',
-        isNew: false
-    },
-    {
-        id: 8,
-        name: 'Brahmi',
-        slug: 'brahmi',
-        price: 22.99,
-        originalPrice: 28.99,
-        image: '/assets/images/products/brahmi.png',
-        category: 'medicinal-herbs',
-        isNew: true
-    },
-
-    // ========== Natural Essential Oils (8 products) ==========
-    {
-        id: 9,
-        name: 'Rose Oil',
-        slug: 'rose-oil',
-        price: 24.50,
-        originalPrice: 35.00,
-        image: '/assets/images/products/rose_oil.png',
-        category: 'essential-oils',
-        isNew: true
-    },
-    {
-        id: 10,
-        name: 'Jasmine Oil',
-        slug: 'jasmine-oil',
-        price: 28.99,
-        originalPrice: null,
-        image: '/assets/images/products/jasmine_oil.png',
-        category: 'essential-oils',
-        isNew: true
-    },
-    {
-        id: 11,
-        name: 'Lavender Oil',
-        slug: 'lavender-oil',
-        price: 19.99,
-        originalPrice: 24.99,
-        image: '/assets/images/products/lavender_oil.png',
-        category: 'essential-oils',
-        isNew: false
-    },
-    {
-        id: 12,
-        name: 'Tea Tree Oil',
-        slug: 'tea-tree-oil',
-        price: 16.99,
-        originalPrice: null,
-        image: '/assets/images/products/tea_tree_oil.png',
-        category: 'essential-oils',
-        isNew: true
-    },
-    {
-        id: 13,
-        name: 'Orange Peel Oil',
-        slug: 'orange-peel-oil',
-        price: 14.99,
-        originalPrice: 18.99,
-        image: '/assets/images/products/orange_peel_oil.png',
-        category: 'essential-oils',
-        isNew: false
-    },
-    {
-        id: 14,
-        name: 'Basil Oil',
-        slug: 'basil-oil',
-        price: 17.99,
-        originalPrice: null,
-        image: '/assets/images/products/basil_oil.png',
-        category: 'essential-oils',
-        isNew: true
-    },
-    {
-        id: 15,
-        name: 'Mint Oil',
-        slug: 'mint-oil',
-        price: 15.99,
-        originalPrice: 19.99,
-        image: '/assets/images/products/mint_oil.png',
-        category: 'essential-oils',
-        isNew: false
-    },
-    {
-        id: 16,
-        name: 'Eucalyptus Oil',
-        slug: 'eucalyptus-oil',
-        price: 18.99,
-        originalPrice: null,
-        image: '/assets/images/products/eucalyptus_oil.png',
-        category: 'essential-oils',
-        isNew: true
-    },
-
-    // ========== Natural Herbal Oils (8 products) ==========
-    {
-        id: 17,
-        name: 'Black Seed Oil',
-        slug: 'black-seed-oil',
-        price: 22.99,
-        originalPrice: 28.99,
-        image: '/assets/images/products/black_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: true
-    },
-    {
-        id: 18,
-        name: 'Flax Seed Oil',
-        slug: 'flax-seed-oil',
-        price: 19.99,
-        originalPrice: null,
-        image: '/assets/images/products/flax_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: false
-    },
-    {
-        id: 19,
-        name: 'Hemp Seed Oil',
-        slug: 'hemp-seed-oil',
-        price: 24.99,
-        originalPrice: 32.99,
-        image: '/assets/images/products/hemp_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: true
-    },
-    {
-        id: 20,
-        name: 'Fenugreek Seed Oil',
-        slug: 'fenugreek-seed-oil',
-        price: 21.99,
-        originalPrice: null,
-        image: '/assets/images/products/flax_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: false
-    },
-    {
-        id: 21,
-        name: 'Almond Oil',
-        slug: 'almond-oil',
-        price: 18.99,
-        originalPrice: 24.99,
-        image: '/assets/images/products/flax_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: true
-    },
-    {
-        id: 22,
-        name: 'Castor Oil',
-        slug: 'castor-oil',
-        price: 14.99,
-        originalPrice: null,
-        image: '/assets/images/products/black_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: false
-    },
-    {
-        id: 23,
-        name: 'Neem Oil',
-        slug: 'neem-oil',
-        price: 16.99,
-        originalPrice: 21.99,
-        image: '/assets/images/products/hemp_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: true
-    },
-    {
-        id: 24,
-        name: 'Extra Virgin Coconut Oil',
-        slug: 'extra-virgin-coconut-oil',
-        price: 19.99,
-        originalPrice: null,
-        image: '/assets/images/products/flax_seed_oil.png',
-        category: 'herbal-oils',
-        isNew: false
-    },
-
-    // ========== Natural Organic Super Foods (8 products) ==========
-    {
-        id: 25,
-        name: 'Chia Seeds',
-        slug: 'chia-seeds',
-        price: 12.99,
-        originalPrice: 16.99,
-        image: '/assets/images/products/chia_seeds.png',
-        category: 'superfoods',
-        isNew: true
-    },
-    {
-        id: 26,
-        name: 'Flax Seeds',
-        slug: 'flax-seeds',
-        price: 9.99,
-        originalPrice: null,
-        image: '/assets/images/products/chia_seeds.png',
-        category: 'superfoods',
-        isNew: false
-    },
-    {
-        id: 27,
-        name: 'Pumpkin Seeds',
-        slug: 'pumpkin-seeds',
-        price: 11.99,
-        originalPrice: 14.99,
-        image: '/assets/images/products/chia_seeds.png',
-        category: 'superfoods',
-        isNew: true
-    },
-    {
-        id: 28,
-        name: 'Quinoa',
-        slug: 'quinoa',
-        price: 14.99,
-        originalPrice: null,
-        image: '/assets/images/products/chia_seeds.png',
-        category: 'superfoods',
-        isNew: false
-    },
-    {
-        id: 29,
-        name: 'Hemp Seeds',
-        slug: 'hemp-seeds',
-        price: 15.99,
-        originalPrice: 19.99,
-        image: '/assets/images/products/chia_seeds.png',
-        category: 'superfoods',
-        isNew: true
-    },
-    {
-        id: 30,
-        name: 'Moringa Powder',
-        slug: 'moringa-powder',
-        price: 18.99,
-        originalPrice: null,
-        image: '/assets/images/products/asparagus_powder.png',
-        category: 'superfoods',
-        isNew: true
-    },
-    {
-        id: 31,
-        name: 'Hemp Powder',
-        slug: 'hemp-powder',
-        price: 21.99,
-        originalPrice: 27.99,
-        image: '/assets/images/products/asparagus_powder.png',
-        category: 'superfoods',
-        isNew: false
-    },
-    {
-        id: 32,
-        name: 'Protein Powder',
-        slug: 'protein-powder',
-        price: 34.99,
-        originalPrice: null,
-        image: '/assets/images/products/asparagus_powder.png',
-        category: 'superfoods',
-        isNew: true
-    },
-
-    // ========== Natural Cosmetics (8 products) ==========
-    {
-        id: 33,
-        name: 'Natural Medicated Shampoo',
-        slug: 'natural-medicated-shampoo',
-        price: 15.99,
-        originalPrice: 21.99,
-        image: '/assets/images/products/natural_shampoo.png',
-        category: 'cosmetics',
-        isNew: true
-    },
-    {
-        id: 34,
-        name: 'Natural Soaps',
-        slug: 'natural-soaps',
-        price: 8.99,
-        originalPrice: null,
-        image: '/assets/images/products/basil_soap.png',
-        category: 'cosmetics',
-        isNew: false
-    },
-    {
-        id: 35,
-        name: 'Natural Face Wash',
-        slug: 'natural-face-wash',
-        price: 12.99,
-        originalPrice: 16.99,
-        image: '/assets/images/products/natural_shampoo.png',
-        category: 'cosmetics',
-        isNew: true
-    },
-    {
-        id: 36,
-        name: 'Natural Scrubs',
-        slug: 'natural-scrubs',
-        price: 14.99,
-        originalPrice: null,
-        image: '/assets/images/products/orange_peel_powder.png',
-        category: 'cosmetics',
-        isNew: false
-    },
-    {
-        id: 37,
-        name: 'Natural Hair Serum',
-        slug: 'natural-hair-serum',
-        price: 19.99,
-        originalPrice: 24.99,
-        image: '/assets/images/products/natural_shampoo.png',
-        category: 'cosmetics',
-        isNew: true
-    },
-    {
-        id: 38,
-        name: 'Natural Face Serum',
-        slug: 'natural-face-serum',
-        price: 24.99,
-        originalPrice: null,
-        image: '/assets/images/products/natural_shampoo.png',
-        category: 'cosmetics',
-        isNew: true
-    },
-    {
-        id: 39,
-        name: 'Orange Peel Powder',
-        slug: 'orange-peel-powder',
-        price: 9.99,
-        originalPrice: 12.99,
-        image: '/assets/images/products/orange_peel_powder.png',
-        category: 'cosmetics',
-        isNew: false
-    },
-    {
-        id: 40,
-        name: 'Henna Powder',
-        slug: 'henna-powder',
-        price: 11.99,
-        originalPrice: null,
-        image: '/assets/images/products/henna_powder.png',
-        category: 'cosmetics',
-        isNew: true
-    },
-
-    // ========== Natural Organic Spices (8 products) ==========
-    {
-        id: 41,
-        name: 'Turmeric Powder',
-        slug: 'turmeric-powder',
-        price: 8.99,
-        originalPrice: 11.99,
-        image: '/assets/images/products/turmeric_powder.png',
-        category: 'spices',
-        isNew: true
-    },
-    {
-        id: 42,
-        name: 'Cinnamon Sticks',
-        slug: 'cinnamon-sticks',
-        price: 7.99,
-        originalPrice: null,
-        image: '/assets/images/products/cinnamon.png',
-        category: 'spices',
-        isNew: false
-    },
-    {
-        id: 43,
-        name: 'Black Pepper',
-        slug: 'black-pepper',
-        price: 6.99,
-        originalPrice: 8.99,
-        image: '/assets/images/products/cumin_seeds.png',
-        category: 'spices',
-        isNew: true
-    },
-    {
-        id: 44,
-        name: 'Cumin Seeds',
-        slug: 'cumin-seeds',
-        price: 5.99,
-        originalPrice: null,
-        image: '/assets/images/products/cumin_seeds.png',
-        category: 'spices',
-        isNew: false
-    },
-    {
-        id: 45,
-        name: 'Cardamom',
-        slug: 'cardamom',
-        price: 12.99,
-        originalPrice: 16.99,
-        image: '/assets/images/products/cinnamon_spices.png',
-        category: 'spices',
-        isNew: true
-    },
-    {
-        id: 46,
-        name: 'Cloves',
-        slug: 'cloves',
-        price: 9.99,
-        originalPrice: null,
-        image: '/assets/images/products/cinnamon.png',
-        category: 'spices',
-        isNew: false
-    },
-    {
-        id: 47,
-        name: 'Garam Masala',
-        slug: 'garam-masala',
-        price: 8.99,
-        originalPrice: 11.99,
-        image: '/assets/images/products/cinnamon_spices.png',
-        category: 'spices',
-        isNew: true
-    },
-    {
-        id: 48,
-        name: 'Saffron',
-        slug: 'saffron',
-        price: 29.99,
-        originalPrice: null,
-        image: '/assets/images/products/turmeric_powder.png',
-        category: 'spices',
-        isNew: true
-    },
-
-    // ========== Spiritual Items (8 products) ==========
-    {
-        id: 49,
-        name: 'Incense Sticks',
-        slug: 'incense-sticks',
-        price: 6.99,
-        originalPrice: 8.99,
-        image: '/assets/images/products/incense_sticks.png',
-        category: 'spiritual-items',
-        isNew: true
-    },
-    {
-        id: 50,
-        name: 'Meditation Candles',
-        slug: 'meditation-candles',
-        price: 12.99,
-        originalPrice: null,
-        image: '/assets/images/products/candles.png',
-        category: 'spiritual-items',
-        isNew: false
-    },
-    {
-        id: 51,
-        name: 'Singing Bowl',
-        slug: 'singing-bowl',
-        price: 49.99,
-        originalPrice: 64.99,
-        image: '/assets/images/products/singing_bowl.png',
-        category: 'spiritual-items',
-        isNew: true
-    },
-    {
-        id: 52,
-        name: 'Prayer Beads',
-        slug: 'prayer-beads',
-        price: 14.99,
-        originalPrice: null,
-        image: '/assets/images/products/prayer_beeds.png',
-        category: 'spiritual-items',
-        isNew: true
-    },
-    {
-        id: 53,
-        name: 'Essential Oil Diffuser',
-        slug: 'essential-oil-diffuser',
-        price: 34.99,
-        originalPrice: 44.99,
-        image: '/assets/images/products/candles.png',
-        category: 'spiritual-items',
-        isNew: false
-    },
-    {
-        id: 54,
-        name: 'Sage Smudge Bundle',
-        slug: 'sage-smudge-bundle',
-        price: 9.99,
-        originalPrice: null,
-        image: '/assets/images/products/incense_sticks.png',
-        category: 'spiritual-items',
-        isNew: true
-    },
-    {
-        id: 55,
-        name: 'Crystal Set',
-        slug: 'crystal-set',
-        price: 39.99,
-        originalPrice: 49.99,
-        image: '/assets/images/products/singing_bowl.png',
-        category: 'spiritual-items',
-        isNew: false
-    },
-    {
-        id: 56,
-        name: 'Meditation Cushion',
-        slug: 'meditation-cushion',
-        price: 29.99,
-        originalPrice: null,
-        image: '/assets/images/products/prayer_beeds.png',
-        category: 'spiritual-items',
-        isNew: true
-    },
-
-    // ========== Sara Nursery (8 products) ==========
-    {
-        id: 57,
-        name: 'Aloe Vera Plant',
-        slug: 'aloe-vera-plant',
-        price: 14.99,
-        originalPrice: 19.99,
-        image: '/assets/images/products/aloe_vera_plant.png',
-        category: 'nursery',
-        isNew: true
-    },
-    {
-        id: 58,
-        name: 'Tulsi Plant',
-        slug: 'tulsi-plant',
-        price: 9.99,
-        originalPrice: null,
-        image: '/assets/images/products/tulsi_plant.png',
-        category: 'nursery',
-        isNew: false
-    },
-    {
-        id: 59,
-        name: 'Lavender Plant',
-        slug: 'lavender-plant',
-        price: 12.99,
-        originalPrice: 16.99,
-        image: '/assets/images/products/tulsi_plant.png',
-        category: 'nursery',
-        isNew: true
-    },
-    {
-        id: 60,
-        name: 'Money Plant',
-        slug: 'money-plant',
-        price: 8.99,
-        originalPrice: null,
-        image: '/assets/images/products/peace_lily_plant.png',
-        category: 'nursery',
-        isNew: false
-    },
-    {
-        id: 61,
-        name: 'Snake Plant',
-        slug: 'snake-plant',
-        price: 16.99,
-        originalPrice: 21.99,
-        image: '/assets/images/products/aloe_vera_plant.png',
-        category: 'nursery',
-        isNew: true
-    },
-    {
-        id: 62,
-        name: 'Rosemary Plant',
-        slug: 'rosemary-plant',
-        price: 11.99,
-        originalPrice: null,
-        image: '/assets/images/products/tulsi_plant.png',
-        category: 'nursery',
-        isNew: false
-    },
-    {
-        id: 63,
-        name: 'Jade Plant',
-        slug: 'jade-plant',
-        price: 13.99,
-        originalPrice: 17.99,
-        image: '/assets/images/products/peace_lily_plant.png',
-        category: 'nursery',
-        isNew: true
-    },
-    {
-        id: 64,
-        name: 'Peace Lily',
-        slug: 'peace-lily',
-        price: 18.99,
-        originalPrice: null,
-        image: '/assets/images/products/peace_lily_plant.png',
-        category: 'nursery',
-        isNew: true
-    }
-];
-
-const categories = [
-    { value: 'all', label: 'All Products' },
-    { value: 'medicinal-herbs', label: 'Medicinal Herbs' },
-    { value: 'essential-oils', label: 'Natural Essential Oils' },
-    { value: 'herbal-oils', label: 'Natural Herbal Oils' },
-    { value: 'superfoods', label: 'Natural Organic Super Foods' },
-    { value: 'cosmetics', label: 'Natural Cosmetics' },
-    { value: 'spices', label: 'Natural Organic Spices' },
-    { value: 'spiritual-items', label: 'Spiritual Items' },
-    { value: 'nursery', label: 'Sara Nursery' }
-];
 
 const Products = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialCategory = searchParams.get('category') || 'all';
     
-    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
+    // Read URL params
+    const initialCategory = searchParams.get('category') || 'all';
+    const initialPage = parseInt(searchParams.get('page')) || 1;
 
-    // Sync with URL changes (e.g., when clicking back button or links from home page)
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    
+    // Filters and Pagination State
+    const [activeCategory, setActiveCategory] = useState(initialCategory);
+    const [page, setPage] = useState(initialPage);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [sortBy, setSortBy] = useState('newest');
+
+    // Fetch Categories
     useEffect(() => {
-        const categoryFromUrl = searchParams.get('category') || 'all';
-        if (categoryFromUrl !== selectedCategory) {
-            setSelectedCategory(categoryFromUrl);
-            setCurrentPage(1);
-        }
-    }, [searchParams]);
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('/api/categories');
+                const data = await res.json();
+                setCategories(data);
+            } catch (error) {
+                console.error("Failed to load categories", error);
+            }
+        };
+        fetchCategories();
+    }, []);
 
-    const itemsPerPage = 12;
+    // Fetch Products when filters change
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                // We use the admin endpoint structure, or ideally a public product list endpoint
+                // Since our public endpoint in productController doesn't have pagination yet, we'll use the admin one or build it.
+                // Wait, productController.js exists. Let's see if we can just hit /api/products
+                let url = `/api/products?page=${page}&limit=12`;
+                if (activeCategory !== 'all') {
+                    url += `&category=${activeCategory}`;
+                }
 
-    const filteredProducts = selectedCategory === 'all'
-        ? products
-        : products.filter(p => p.category === selectedCategory);
+                // If the backend /api/products doesn't support pagination, we might need to fallback to /api/admin/products for now
+                // Actually, let's use the admin endpoint for now just to get the data working with pagination
+                url = `/api/admin/products?page=${page}&limit=12`;
+                if (activeCategory !== 'all') {
+                    url += `&category=${activeCategory}`;
+                }
 
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // Assuming admin endpoint response: { products, page, pages, total }
+                let fetchedProducts = data.products || [];
+                
+                // Client-side sorting for now since admin API doesn't support generic sort
+                if (sortBy === 'price-low') {
+                    fetchedProducts.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+                } else if (sortBy === 'price-high') {
+                    fetchedProducts.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+                }
 
-    const handleCategoryChange = (category) => {
-        setSelectedCategory(category);
-        setCurrentPage(1);
-        setIsDropdownOpen(false);
-        
-        if (category === 'all') {
-            searchParams.delete('category');
-            setSearchParams(searchParams);
-        } else {
-            setSearchParams({ category });
-        }
+                setProducts(fetchedProducts);
+                setTotalPages(data.pages || 1);
+                setTotalProducts(data.total || fetchedProducts.length);
+
+                // Update URL silently
+                setSearchParams({ category: activeCategory, page }, { replace: true });
+            } catch (error) {
+                console.error("Failed to fetch products:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, [activeCategory, page, sortBy, setSearchParams]);
+
+    const handleCategoryChange = (categorySlug) => {
+        setActiveCategory(categorySlug);
+        setPage(1); // Reset to first page
     };
-
-    const paginatedProducts = filteredProducts.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
-
-    const selectedCategoryLabel = categories.find(c => c.value === selectedCategory)?.label || 'All Products';
 
     return (
         <div className="products-page">
-            <Navbar />
-
-            <main className="products-main">
+            <div className="products-header">
                 <div className="container">
-                    <h1 className="products-title">{selectedCategoryLabel}</h1>
+                    <h1>Our Natural Collection</h1>
+                    <p>Discover our complete range of organic and natural products.</p>
+                </div>
+            </div>
 
-                    <div className="products-header">
-                        <p className="products-count">Showing {filteredProducts.length} Results</p>
+            <div className="container">
+                <div className="products-layout">
+                    {/* Sidebar Filters */}
+                    <aside className="products-sidebar">
+                        <div className="filter-widget">
+                            <h3>Categories</h3>
+                            <ul className="category-list">
+                                <li className={activeCategory === 'all' ? 'active' : ''}>
+                                    <button onClick={() => handleCategoryChange('all')}>
+                                        All Products
+                                    </button>
+                                </li>
+                                {categories.map(category => (
+                                    <li 
+                                        key={category._id} 
+                                        className={activeCategory === category.slug ? 'active' : ''}
+                                    >
+                                        <button onClick={() => handleCategoryChange(category.slug)}>
+                                            {category.name}
+                                            <span className="count">({category.productCount || 0})</span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </aside>
 
-                        <div className="products-filter">
-                            <div
-                                className={`filter-dropdown ${isDropdownOpen ? 'open' : ''}`}
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                                <span>{selectedCategoryLabel}</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="m6 9 6 6 6-6" />
-                                </svg>
-
-                                {isDropdownOpen && (
-                                    <ul className="dropdown-menu">
-                                        {categories.map(cat => (
-                                            <li
-                                                key={cat.value}
-                                                className={selectedCategory === cat.value ? 'active' : ''}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleCategoryChange(cat.value);
-                                                }}
-                                            >
-                                                {cat.label}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
+                    {/* Main Content */}
+                    <div className="products-main">
+                        <div className="products-toolbar">
+                            <div className="results-count">
+                                Showing {products.length} of {totalProducts} products
+                            </div>
+                            <div className="sort-controls">
+                                <label>Sort by:</label>
+                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                    <option value="newest">Newest Arrivals</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="products-grid">
-                        {paginatedProducts.map(product => (
-                            <Link to={`/products/${product.slug}`} key={product.id} className="product-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="product-image">
-                                    {product.isNew && <span className="product-badge">New</span>}
-                                    <img src={product.image} alt={product.name} />
-                                    <span className="product-buy-btn">View Details</span>
-                                </div>
-                                <div className="product-info">
-                                    <h3 className="product-name">{product.name}</h3>
-                                    <div className="product-price">
-                                        <span className="current-price">$ {product.price.toFixed(2)} USD</span>
-                                        {product.originalPrice && (
-                                            <span className="original-price">$ {product.originalPrice.toFixed(2)} USD</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-
-                    {totalPages > 1 && (
-                        <div className="pagination">
-                            <button 
-                                className="pagination-btn" 
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                            >
-                                Previous
-                            </button>
-                            
-                            <div className="pagination-numbers">
-                                {[...Array(totalPages)].map((_, i) => (
-                                    <button 
-                                        key={i + 1}
-                                        className={`pagination-number ${currentPage === i + 1 ? 'active' : ''}`}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                    >
-                                        {i + 1}
-                                    </button>
+                        {loading ? (
+                            <div className="products-grid loading-grid" style={{ opacity: 0.5 }}>
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} style={{ height: '350px', backgroundColor: 'var(--surface-color)', borderRadius: '16px' }} />
                                 ))}
                             </div>
+                        ) : products.length > 0 ? (
+                            <>
+                                <div className="products-grid">
+                                    {products.map(product => (
+                                        <ProductCard key={product._id} product={product} />
+                                    ))}
+                                </div>
 
-                            <button 
-                                className="pagination-btn" 
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
+                                {totalPages > 1 && (
+                                    <div className="pagination">
+                                        <button 
+                                            className="page-btn prev"
+                                            disabled={page === 1}
+                                            onClick={() => setPage(p => p - 1)}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="15 18 9 12 15 6"></polyline>
+                                            </svg>
+                                        </button>
+                                        
+                                        <div className="page-numbers">
+                                            {[...Array(totalPages)].map((_, i) => (
+                                                <button
+                                                    key={i + 1}
+                                                    className={`page-number ${page === i + 1 ? 'active' : ''}`}
+                                                    onClick={() => setPage(i + 1)}
+                                                >
+                                                    {i + 1}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <button 
+                                            className="page-btn next"
+                                            disabled={page === totalPages}
+                                            onClick={() => setPage(p => p + 1)}
+                                        >
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="no-products-found">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <h3>No products found</h3>
+                                <p>Try selecting a different category or clearing your filters.</p>
+                                <button 
+                                    className="btn-primary"
+                                    onClick={() => handleCategoryChange('all')}
+                                >
+                                    View All Products
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </main>
-
-            <Footer />
+            </div>
         </div>
     );
 };
