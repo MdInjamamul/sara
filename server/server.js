@@ -8,6 +8,8 @@ const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminProductRoutes = require('./routes/adminProductRoutes');
+const adminHomepageRoutes = require('./routes/adminHomepageRoutes');
+const homepageRoutes = require('./routes/homepageRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -24,9 +26,11 @@ app.use('/assets', express.static(path.join(__dirname, '../client/public/assets'
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
+app.use('/api/homepage', homepageRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/admin/products', adminProductRoutes); // Must come before /api/admin to prevent route catching conflicts
+app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/homepage', adminHomepageRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Health check
