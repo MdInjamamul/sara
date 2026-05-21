@@ -150,6 +150,11 @@
     color: var(--color-white);
 }
 
+.badge-tag.sold {
+    background-color: var(--color-bg-dark);
+    color: var(--color-text);
+}
+
 .pdp-thumbnails {
     display: flex;
     gap: var(--space-md);
@@ -347,6 +352,16 @@
     line-height: 44px;
 }
 
+.pdp-quantity.disabled {
+    opacity: 0.6;
+    background-color: var(--color-bg-light);
+}
+
+.pdp-quantity.disabled button {
+    cursor: not-allowed;
+    color: var(--color-text-muted);
+}
+
 .pdp-add-to-cart {
     flex: 1;
     max-width: 300px;
@@ -367,10 +382,24 @@
     gap: var(--space-sm);
 }
 
-.pdp-add-to-cart:hover {
+.pdp-add-to-cart:not(:disabled):hover {
     background-color: var(--color-accent-light);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+}
+
+.pdp-add-to-cart:disabled {
+    background-color: #6a7c64; /* Muted accent color */
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.share-dropdown-item {
+    transition: background-color var(--transition-fast);
+}
+
+.share-dropdown-item:hover {
+    background-color: var(--color-bg-light);
 }
 
 .pdp-add-to-cart svg {

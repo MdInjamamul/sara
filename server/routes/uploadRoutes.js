@@ -39,14 +39,28 @@ const upload = multer({
     }
 });
 
-// @desc    Upload image
+const { protect, admin } = require('../middleware/authMiddleware');
+
+// @desc    Upload product image (admin only)
 // @route   POST /api/upload
-router.post('/', upload.single('image'), (req, res) => {
+router.post('/', protect, admin, upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No image uploaded' });
     }
     res.json({
         message: 'Image uploaded successfully',
+        imageUrl: `/uploads/${req.file.filename}`
+    });
+});
+
+// @desc    Upload user avatar (authenticated users)
+// @route   POST /api/upload/avatar
+router.post('/avatar', protect, upload.single('image'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No image uploaded' });
+    }
+    res.json({
+        message: 'Avatar uploaded successfully',
         imageUrl: `/uploads/${req.file.filename}`
     });
 });

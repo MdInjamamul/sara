@@ -11,12 +11,14 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
         category: 'all',
         price: '',
         originalPrice: '',
-        image: '/assets/images/placeholder.png',
+        images: [],
         isNew: false,
+        benefits: '',
         benefits: '',
         howToUse: '',
         ingredients: '',
-        stock: ''
+        stock: '',
+        variantOptions: ''
     });
 
     useEffect(() => {
@@ -29,12 +31,15 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
                 category: initialData.categorySlug || initialData.category || 'all',
                 price: initialData.price || '',
                 originalPrice: initialData.originalPrice || '',
-                image: initialData.image || '/assets/images/placeholder.png',
+                images: initialData.images || (initialData.image && initialData.image !== '/assets/images/placeholder.png' ? [initialData.image] : []),
                 isNew: initialData.isNew || false,
                 benefits: initialData.benefits ? initialData.benefits.join('\n') : '',
                 howToUse: initialData.howToUse || '',
                 ingredients: initialData.ingredients ? initialData.ingredients.join('\n') : '',
-                stock: initialData.stock !== undefined ? initialData.stock : ''
+                stock: initialData.stock !== undefined ? initialData.stock : '',
+                variantOptions: initialData.variants && initialData.variants.length > 0 
+                    ? initialData.variants.map(v => v.name).join(', ') 
+                    : ''
             });
         } else {
             // Reset for new product
@@ -46,12 +51,13 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
                 category: categories[1]?.value || 'medicinal-herbs',
                 price: '',
                 originalPrice: '',
-                image: '/assets/images/placeholder.png',
+                images: [],
                 isNew: false,
                 benefits: '',
                 howToUse: '',
                 ingredients: '',
-                stock: ''
+                stock: '',
+                variantOptions: ''
             });
         }
     }, [initialData, isOpen, categories]);
@@ -71,6 +77,8 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
             }));
         }
     };
+
+    // Variant helpers removed since we use a single comma-separated string now
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -92,7 +100,13 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
             originalPrice: formData.originalPrice ? Number(formData.originalPrice) : null,
             stock: formData.stock !== '' ? Number(formData.stock) : 0,
             benefits: formData.benefits ? formData.benefits.split('\n').map(s => s.trim()).filter(Boolean) : [],
-            ingredients: formData.ingredients ? formData.ingredients.split('\n').map(s => s.trim()).filter(Boolean) : []
+            ingredients: formData.ingredients ? formData.ingredients.split('\n').map(s => s.trim()).filter(Boolean) : [],
+            variants: formData.variantOptions ? formData.variantOptions.split(',').map(name => ({
+                name: name.trim(),
+                price: Number(formData.price),
+                discountPrice: formData.originalPrice ? Number(formData.price) : null,
+                stock: formData.stock !== '' ? Number(formData.stock) : 0
+            })).filter(v => v.name) : []
         };
 
         if (initialData && initialData.id) {
@@ -103,31 +117,54 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
     };
 
     const handleImageUpload = async (e) => {
-        const file = e.target.files?.[0] || e.dataTransfer?.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            try {
-                const uploadData = new FormData();
-                uploadData.append('image', file);
+        const files = Array.from(e.target.files || e.dataTransfer?.files || []);
+        if (files.length === 0) return;
 
-                const response = await fetch('http://localhost:5000/api/upload', {
-                    method: 'POST',
-                    body: uploadData
-                });
-
-                if (!response.ok) throw new Error('Upload failed');
-                
-                const data = await response.json();
-                setFormData(prev => ({ ...prev, image: `http://localhost:5000${data.imageUrl}` }));
-                
-                if (onToast) {
-                    onToast('Image uploaded successfully', 'success');
-                }
-            } catch (err) {
-                if (onToast) onToast('Failed to upload image', 'error');
-            }
-        } else if (file) {
-            if (onToast) onToast('Please upload a valid image file', 'error');
+        if (formData.images.length + files.length > 5) {
+            if (onToast) onToast('Maximum 5 images allowed', 'error');
+            return;
         }
+
+        const newImages = [...formData.images];
+        let hasError = false;
+
+        for (const file of files) {
+            if (file.type.startsWith('image/')) {
+                try {
+                    const uploadData = new FormData();
+                    uploadData.append('image', file);
+
+                    const response = await fetch('http://localhost:5000/api/upload', {
+                        method: 'POST',
+                        body: uploadData
+                    });
+
+                    if (!response.ok) throw new Error('Upload failed');
+                    
+                    const data = await response.json();
+                    newImages.push(`http://localhost:5000${data.imageUrl}`);
+                } catch (err) {
+                    hasError = true;
+                }
+            }
+        }
+        
+        setFormData(prev => ({ ...prev, images: newImages }));
+        
+        if (onToast) {
+            if (hasError) {
+                onToast('Some images failed to upload', 'error');
+            } else {
+                onToast('Images uploaded successfully', 'success');
+            }
+        }
+    };
+
+    const removeImage = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, index) => index !== indexToRemove)
+        }));
     };
 
     const handleDragOver = (e) => {
@@ -285,41 +322,51 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
                     </div>
 
                     <div className="form-group">
-                        <label>Product Image</label>
+                        <label>Product Images (Max 5)</label>
                         <div 
                             className={`drop-zone ${isDragging ? 'dragging' : ''}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                             onClick={() => document.getElementById('image-upload').click()}
+                            style={{ minHeight: '120px' }}
                         >
                             <input 
                                 type="file" 
                                 id="image-upload" 
                                 accept="image/*"
+                                multiple
                                 onChange={handleImageUpload} 
                                 style={{ display: 'none' }}
                             />
                             
-                            {formData.image && formData.image !== '/assets/images/placeholder.png' ? (
-                                <div className="drop-zone-preview">
-                                    <img src={formData.image} alt="Preview" />
-                                    <div className="drop-zone-overlay">
-                                        <span>Click or Drop to change</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="drop-zone-placeholder">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                    <p>Drag & Drop an image here</p>
-                                    <span className="drop-zone-sub">or click to browse files</span>
-                                </div>
-                            )}
+                            <div className="drop-zone-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <p>Drag & Drop images or click here</p>
+                            </div>
                         </div>
+
+                        {formData.images.length > 0 && (
+                            <div className="image-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                                {formData.images.map((img, idx) => (
+                                    <div key={idx} style={{ position: 'relative', width: '100%', paddingTop: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                        <img src={img} alt={`Preview ${idx + 1}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button 
+                                            type="button" 
+                                            onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
+                                            style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(231, 76, 60, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}
+                                            title="Remove image"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group full-width">
@@ -358,7 +405,18 @@ const ProductModal = ({ isOpen, onClose, onSave, initialData, categories, onToas
                         ></textarea>
                     </div>
 
-
+                    <div className="form-group full-width">
+                        <label htmlFor="variantOptions">Product Options / Variants (Comma separated)</label>
+                        <input 
+                            type="text" 
+                            id="variantOptions" 
+                            name="variantOptions" 
+                            value={formData.variantOptions} 
+                            onChange={handleChange} 
+                            placeholder="e.g. 100g, 250g, 500g or Red, Blue"
+                        />
+                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '4px' }}>These options will be available for customers to select on the product page.</p>
+                    </div>
 
                     <div className="modal-footer">
                         <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>

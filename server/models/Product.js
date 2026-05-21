@@ -67,7 +67,21 @@ const productSchema = new mongoose.Schema({
     },
     ingredients: [{
         type: String
-    }]
+    }],
+    variants: [{
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        discountPrice: { type: Number, default: null },
+        stock: { type: Number, default: 0 }
+    }],
+    ratings: {
+        average: { type: Number, default: 0 },
+        count: { type: Number, default: 0 }
+    },
+    totalSold: {
+        type: Number,
+        default: 0
+    }
 }, {
     timestamps: true,
     suppressReservedKeysWarning: true

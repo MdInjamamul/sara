@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
+import Toast from '../../components/Toast/Toast';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
 import './Products.css';
@@ -30,17 +33,27 @@ const categories = [
 const Products = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const initialCategory = searchParams.get('category') || 'all';
+    const searchQuery = searchParams.get('search') || '';
     
     const [selectedCategory, setSelectedCategory] = useState(initialCategory);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [toast, setToast] = useState({ message: '', type: 'success' });
+
+    const { addToCart } = useCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
 
     useEffect(() => {
         const fetchProducts = async () => {
+            setIsLoading(true);
             try {
-                const res = await fetch('http://localhost:5000/api/products');
+                let url = 'http://localhost:5000/api/products';
+                if (searchQuery) {
+                    url += `?keyword=${encodeURIComponent(searchQuery)}`;
+                }
+                const res = await fetch(url);
                 const data = await res.json();
                 setProducts(data.map(formatProduct));
                 setIsLoading(false);
@@ -50,7 +63,7 @@ const Products = () => {
             }
         };
         fetchProducts();
-    }, []);
+    }, [searchQuery]);
 
     // Sync with URL changes (e.g., when clicking back button or links from home page)
     useEffect(() => {
@@ -80,7 +93,8 @@ const Products = () => {
             searchParams.delete('category');
             setSearchParams(searchParams);
         } else {
-            setSearchParams({ category });
+            searchParams.set('category', category);
+            setSearchParams(searchParams);
         }
     };
 
@@ -90,6 +104,7 @@ const Products = () => {
     );
 
     const selectedCategoryLabel = categories.find(c => c.value === selectedCategory)?.label || 'All Products';
+    const pageTitle = searchQuery ? `Search Results for "${searchQuery}"` : selectedCategoryLabel;
 
     return (
         <div className="products-page">
@@ -97,7 +112,7 @@ const Products = () => {
 
             <main className="products-main">
                 <div className="container">
-                    <h1 className="products-title">{selectedCategoryLabel}</h1>
+                    <h1 className="products-title">{pageTitle}</h1>
 
                     <div className="products-header">
                         <p className="products-count">{isLoading ? 'Loading products...' : `Showing ${filteredProducts.length} Results`}</p>
@@ -135,10 +150,50 @@ const Products = () => {
                     <div className="products-grid">
                         {paginatedProducts.map(product => (
                             <Link to={`/products/${product.slug}`} key={product.id} className="product-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-                                <div className="product-image">
+                                <div className="product-image" style={{ position: 'relative' }}>
                                     {product.isNew && <span className="product-badge">New</span>}
+                                    <button 
+                                        className="product-wishlist-icon"
+                                        onClick={async (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const success = await toggleWishlist(product.id);
+                                            if (success) setToast({ message: isInWishlist(product.id) ? 'Removed from wishlist' : 'Added to wishlist', type: 'success' });
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '10px',
+                                            right: '10px',
+                                            background: 'white',
+                                            borderRadius: '50%',
+                                            width: '32px',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                            zIndex: 10,
+                                            color: isInWishlist(product.id) ? 'var(--color-danger)' : 'var(--color-text-muted)'
+                                        }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={isInWishlist(product.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </button>
                                     <img src={product.image} alt={product.name} />
-                                    <span className="product-buy-btn">View Details</span>
+                                    <button 
+                                        className="product-buy-btn"
+                                        onClick={async (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const success = await addToCart(product.id, 1);
+                                            if (success) setToast({ message: 'Added to cart!', type: 'success' });
+                                        }}
+                                    >
+                                        Add to Cart
+                                    </button>
                                 </div>
                                 <div className="product-info">
                                     <h3 className="product-name">{product.name}</h3>
@@ -188,6 +243,11 @@ const Products = () => {
             </main>
 
             <Footer />
+            <Toast 
+                message={toast.message} 
+                type={toast.type} 
+                onClose={() => setToast({ message: '', type: 'success' })} 
+            />
         </div>
     );
 };
