@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
+import ProductCard from '../../components/ProductCard/ProductCard';
 import { allProducts } from '../../data/productsData';
 import './ProductDetails.css';
 
@@ -353,9 +354,13 @@ const ProductDetails = () => {
                         <section className="pdp-gallery" aria-label="Product images">
                             <div className="pdp-main-image">
                                 <div className="pdp-image-badge">
-                                    {product.isNew && <span className="badge-tag new">New</span>}
-                                    {product.isBestseller && <span className="badge-tag bestseller">Bestseller</span>}
-                                    {hasDiscount && <span className="badge-tag sale">-{discountPercent}%</span>}
+                                    {!product.inStock && <span className="badge-tag out-of-stock">Out of Stock</span>}
+                                    {product.inStock && product.isOffer && (
+                                        <span className="badge-tag offer">{product.offerLabel || 'Special Offer'}</span>
+                                    )}
+                                    {product.inStock && product.isBestseller && <span className="badge-tag bestseller">Bestseller</span>}
+                                    {product.inStock && product.isNew && <span className="badge-tag new">New</span>}
+                                    {product.inStock && hasDiscount && <span className="badge-tag sale">-{discountPercent}%</span>}
                                 </div>
                                 <img
                                     src={product.images?.[selectedImageIndex] || product.images?.[0]}
@@ -599,34 +604,9 @@ const ProductDetails = () => {
                             </div>
                             <div className="pdp-related-grid">
                                 {relatedProducts.map((rp) => (
-                                    <Link
-                                        to={`/products/${rp.slug}`}
-                                        key={rp._id || rp.slug}
-                                        className="product-card"
-                                        aria-label={`View ${rp.name}`}
-                                    >
-                                        <div className="product-image">
-                                            {rp.isNew && <span className="product-badge">New</span>}
-                                            <img
-                                                src={rp.images?.[0]}
-                                                alt={rp.name}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                        <div className="product-info">
-                                            <h3 className="product-name">{rp.name}</h3>
-                                            <div className="product-price">
-                                                <span className="current-price">
-                                                    {formatPrice(rp.discountPrice || rp.price)}
-                                                </span>
-                                                {rp.discountPrice && (
-                                                    <span className="original-price">
-                                                        {formatPrice(rp.price)}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Link>
+                                    <div key={rp._id || rp.slug} className="related-product-wrapper">
+                                        <ProductCard product={rp} />
+                                    </div>
                                 ))}
                             </div>
                         </section>
