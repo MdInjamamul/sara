@@ -22,6 +22,12 @@ const getAllProducts = async (queryParams) => {
     if (queryParams.featured === 'true') {
         filter.isFeatured = true;
     }
+    if (queryParams.keyword) {
+        filter.$or = [
+            { name: { $regex: queryParams.keyword, $options: 'i' } },
+            { description: { $regex: queryParams.keyword, $options: 'i' } }
+        ];
+    }
 
     const options = {};
     if (queryParams.limit) {
@@ -79,13 +85,14 @@ const createProduct = async (dto) => {
         discountPrice: dto.discountPrice,
         categorySlug: dto.categorySlug,
         category: categoryObj._id,
-        images: dto.image ? [dto.image] : [],
+        images: dto.images || [],
         isNew: dto.isNew || false,
         stock: dto.stock || 0,
         inStock: (dto.stock || 0) > 0,
         benefits: dto.benefits || [],
         howToUse: dto.howToUse || '',
-        ingredients: dto.ingredients || []
+        ingredients: dto.ingredients || [],
+        variants: dto.variants || []
     };
 
     return productRepository.create(productData);
@@ -129,13 +136,15 @@ const updateProduct = async (id, dto) => {
     if (dto.benefits !== undefined) product.benefits = dto.benefits;
     if (dto.howToUse !== undefined) product.howToUse = dto.howToUse;
     if (dto.ingredients !== undefined) product.ingredients = dto.ingredients;
+    if (dto.variants !== undefined) product.variants = dto.variants;
 
-    // Handle image replacement — delete old image from disk
-    if (dto.image) {
-        if (product.images && product.images.length > 0 && product.images[0] !== dto.image) {
-            deleteImageFromDisk(product.images[0]);
+    // Handle image replacement — delete removed images from disk
+    if (dto.images !== undefined) {
+        if (product.images && product.images.length > 0) {
+            const imagesToDelete = product.images.filter(img => !dto.images.includes(img));
+            imagesToDelete.forEach(deleteImageFromDisk);
         }
-        product.images = [dto.image];
+        product.images = dto.images;
     }
 
     return productRepository.update(product);

@@ -34,7 +34,7 @@ const createProductSchema = Joi.object({
     categorySlug: Joi.string().trim().required()
         .messages({ 'any.required': 'Category is required' }),
 
-    image: Joi.string().trim().allow('', null).default(null),
+    images: Joi.array().items(Joi.string().trim()).max(5).default([]),
 
     isNew: Joi.boolean().default(false),
 
@@ -45,7 +45,14 @@ const createProductSchema = Joi.object({
 
     howToUse: Joi.string().trim().allow('', null).default(''),
 
-    ingredients: Joi.array().items(Joi.string().trim()).default([])
+    ingredients: Joi.array().items(Joi.string().trim()).default([]),
+
+    variants: Joi.array().items(Joi.object({
+        name: Joi.string().trim().required(),
+        price: Joi.number().positive().required(),
+        discountPrice: Joi.number().positive().allow(null).default(null),
+        stock: Joi.number().integer().min(0).default(0)
+    })).default([])
 });
 
 /**
@@ -73,7 +80,7 @@ const updateProductSchema = Joi.object({
 
     categorySlug: Joi.string().trim(),
 
-    image: Joi.string().trim().allow('', null),
+    images: Joi.array().items(Joi.string().trim()).max(5),
 
     isNew: Joi.boolean(),
 
@@ -84,7 +91,14 @@ const updateProductSchema = Joi.object({
 
     howToUse: Joi.string().trim().allow('', null),
 
-    ingredients: Joi.array().items(Joi.string().trim())
+    ingredients: Joi.array().items(Joi.string().trim()),
+
+    variants: Joi.array().items(Joi.object({
+        name: Joi.string().trim().required(),
+        price: Joi.number().positive().required(),
+        discountPrice: Joi.number().positive().allow(null).default(null),
+        stock: Joi.number().integer().min(0).default(0)
+    }))
 }).min(1).messages({
     'object.min': 'At least one field must be provided for update'
 });

@@ -150,10 +150,20 @@ const CategorySection = () => {
                 }
             });
 
-        }, container);
+        }, sectionRef.current);
+
+        // Add a ResizeObserver to refresh ScrollTrigger when DOM heights change 
+        // (e.g., when TrendingProducts finish loading and take up space)
+        const resizeObserver = new ResizeObserver(() => {
+            ScrollTrigger.refresh();
+        });
+        resizeObserver.observe(document.body);
 
         // Cleanup
-        return () => ctx.revert();
+        return () => {
+            ctx.revert();
+            resizeObserver.disconnect();
+        };
     }, []);
 
     // Update preview image when activeIndex changes

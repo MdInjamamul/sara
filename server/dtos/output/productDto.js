@@ -33,6 +33,9 @@ const productDto = (doc) => {
         benefits: obj.benefits || [],
         howToUse: obj.howToUse || '',
         ingredients: obj.ingredients || [],
+        variants: obj.variants || [],
+        ratings: obj.ratings || { average: 0, count: 0 },
+        totalSold: obj.totalSold || 0,
         createdAt: obj.createdAt,
         updatedAt: obj.updatedAt
     };

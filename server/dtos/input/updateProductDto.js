@@ -13,12 +13,13 @@ const updateProductDto = (body) => {
     if (body.price !== undefined) dto.price = body.price;
     if (body.discountPrice !== undefined) dto.discountPrice = body.discountPrice;
     if (body.categorySlug !== undefined) dto.categorySlug = body.categorySlug;
-    if (body.image !== undefined) dto.image = body.image;
+    if (body.images !== undefined) dto.images = body.images;
     if (body.isNew !== undefined) dto.isNew = body.isNew;
     if (body.stock !== undefined) dto.stock = body.stock;
     if (body.benefits !== undefined) dto.benefits = body.benefits;
     if (body.howToUse !== undefined) dto.howToUse = body.howToUse;
     if (body.ingredients !== undefined) dto.ingredients = body.ingredients;
+    if (body.variants !== undefined) dto.variants = body.variants;
 
     return dto;
 };

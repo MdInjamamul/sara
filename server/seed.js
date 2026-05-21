@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const Category = require('./models/Category');
 const Product = require('./models/Product');
+const User = require('./models/User');
+const TrendingConfig = require('./models/TrendingConfig');
+const HeroConfig = require('./models/HeroConfig');
 const { categories, products } = require('./data/seedData');
 
 const seedDatabase = async () => {
@@ -41,6 +44,37 @@ const seedDatabase = async () => {
             await Category.findByIdAndUpdate(cat._id, { productCount: count });
         }
         console.log('Updated product counts for categories');
+        
+        // Seed TrendingConfig
+        await TrendingConfig.deleteMany({});
+        let trendingProducts = [];
+        const categoriesSlugs = ['medicinal-herbs', 'cosmetics', 'essential-oils', 'herbal-oils', 'spices', 'superfoods', 'nursery', 'spiritual-items'];
+        for (const slug of categoriesSlugs) {
+            const prod = await Product.findOne({ categorySlug: slug });
+            if (prod) trendingProducts.push(prod._id);
+        }
+        const additional = await Product.findOne({ categorySlug: 'medicinal-herbs', _id: { $nin: trendingProducts } });
+        if (additional) trendingProducts.push(additional._id);
+
+        if (trendingProducts.length > 0) {
+            await TrendingConfig.create({ products: trendingProducts });
+            console.log('Seeded Trending Config');
+        }
+
+        // Seed admin user
+        const existingAdmin = await User.findOne({ email: 'admin123@gmail.com' });
+        if (!existingAdmin) {
+            const adminUser = new User({
+                name: 'Admin',
+                email: 'admin123@gmail.com',
+                password: 'Admin@123',
+                role: 'admin'
+            });
+            await adminUser.save();
+            console.log('Admin user seeded successfully');
+        } else {
+            console.log('Admin user already exists');
+        }
 
         console.log('Database seeded successfully!');
         process.exit(0);

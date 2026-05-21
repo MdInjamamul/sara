@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout/AdminLayout';
 import ProductModal from '../../components/ProductModal/ProductModal';
 import Toast from '../../components/Toast/Toast';
@@ -20,7 +21,8 @@ const formatProduct = (p) => ({
     inStock: p.inStock,
     benefits: p.benefits || [],
     howToUse: p.howToUse || '',
-    ingredients: p.ingredients || []
+    ingredients: p.ingredients || [],
+    variants: p.variants || []
 });
 
 const categories = [
@@ -36,6 +38,7 @@ const categories = [
 ];
 
 const AdminDashboard = () => {
+    const { token } = useAuth();
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -81,7 +84,10 @@ const AdminDashboard = () => {
         
         try {
             const res = await fetch(`http://localhost:5000/api/products/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
             if (!res.ok) throw new Error('Failed to delete product');
             setProducts(products.filter(p => p.id !== id));
@@ -120,16 +126,21 @@ const AdminDashboard = () => {
                 price: savedProduct.originalPrice ? Number(savedProduct.originalPrice) : Number(savedProduct.price),
                 discountPrice: savedProduct.originalPrice ? Number(savedProduct.price) : null,
                 categorySlug: savedProduct.category,
-                image: savedProduct.image,
+                images: savedProduct.images,
                 isNew: savedProduct.isNew,
+                stock: savedProduct.stock,
                 benefits: savedProduct.benefits,
                 howToUse: savedProduct.howToUse,
-                ingredients: savedProduct.ingredients
+                ingredients: savedProduct.ingredients,
+                variants: savedProduct.variants
             };
 
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(bodyData)
             });
 

@@ -11,12 +11,13 @@ const createProductDto = (body) => ({
     price: body.price,
     discountPrice: body.discountPrice || null,
     categorySlug: body.categorySlug,
-    image: body.image || null,
+    images: body.images || [],
     isNew: body.isNew || false,
     stock: body.stock || 0,
     benefits: body.benefits || [],
     howToUse: body.howToUse || '',
-    ingredients: body.ingredients || []
+    ingredients: body.ingredients || [],
+    variants: body.variants || []
 });
 
 module.exports = createProductDto;

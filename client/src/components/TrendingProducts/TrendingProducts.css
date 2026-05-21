@@ -1,6 +1,6 @@
-/* Trending Products Section */
 .trending-products {
     padding: var(--space-4xl) 0;
+    min-height: 800px;
 }
 
 .trending-products .section-header {

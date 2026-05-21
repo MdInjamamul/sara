@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '../../../components/AdminLayout/AdminLayout';
 import Toast from '../../../components/Toast/Toast';
+import { useAuth } from '../../../context/AuthContext';
 import './HomepageManager.css';
 
 const DEFAULT_SLIDES = [
@@ -46,9 +47,21 @@ const DEFAULT_SLIDES = [
     }
 ];
 
+const DEFAULT_TRENDING_MAP = {
+    'medicinal-herbs': [],
+    'cosmetics': [],
+    'essential-oils': [],
+    'herbal-oils': [],
+    'spices': [],
+    'superfoods': [],
+    'nursery': [],
+    'spiritual-items': []
+};
+
 const HomepageManager = () => {
     const [slides, setSlides] = useState(DEFAULT_SLIDES);
-    const [trendingProducts, setTrendingProducts] = useState(Array(9).fill(null));
+    const [trendingProductsMap, setTrendingProductsMap] = useState(DEFAULT_TRENDING_MAP);
+    const { token } = useAuth();
     
     const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'trending'
     
@@ -64,7 +77,8 @@ const HomepageManager = () => {
     
     // Modal states for Trending
     const [isTrendingModalOpen, setIsTrendingModalOpen] = useState(false);
-    const [currentTrendingSlotIndex, setCurrentTrendingSlotIndex] = useState(-1);
+    const [currentTrendingCat, setCurrentTrendingCat] = useState('');
+    const [tempSelectedTrending, setTempSelectedTrending] = useState([]);
     
     const [toast, setToast] = useState({ message: '', type: 'success' });
 
@@ -93,7 +107,16 @@ const HomepageManager = () => {
                 const trendingData = await trendingRes.json();
                 
                 if (trendingData && trendingData.length === 9) {
-                    setTrendingProducts(trendingData);
+                    const newMap = { ...DEFAULT_TRENDING_MAP };
+                    trendingData.forEach(prod => {
+                        // Backend might return populated product or just ID. We need the category slug.
+                        // Assuming populated because of how we updated the API earlier, but let's be safe.
+                        const productObj = typeof prod === 'object' && prod.categorySlug ? prod : productsData.find(p => p._id === (prod._id || prod));
+                        if (productObj && productObj.categorySlug) {
+                            newMap[productObj.categorySlug] = [...(newMap[productObj.categorySlug] || []), productObj];
+                        }
+                    });
+                    setTrendingProductsMap(newMap);
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -107,7 +130,6 @@ const HomepageManager = () => {
 
     const handleSave = async () => {
         if (activeTab === 'hero') {
-            // Validate: each slide must be either completely empty or have exactly 3 products
             for (const slide of slides) {
                 const productCount = slide.products.filter(slot => slot && slot.product).length;
                 if (productCount > 0 && productCount < 3) {
@@ -118,7 +140,6 @@ const HomepageManager = () => {
 
             setIsSaving(true);
             try {
-                // Filter out nulls/empty for the backend
                 const payloadSlides = slides.map(slide => {
                     const hasProducts = slide.products.some(slot => slot && slot.product);
                     return {
@@ -129,7 +150,10 @@ const HomepageManager = () => {
 
                 const res = await fetch('http://localhost:5000/api/hero-config', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ slides: payloadSlides })
                 });
                 
@@ -142,43 +166,29 @@ const HomepageManager = () => {
                 setIsSaving(false);
             }
         } else if (activeTab === 'trending') {
-            const selectedCount = trendingProducts.filter(p => p !== null).length;
-            if (selectedCount !== 9) {
-                showToast(`Please select exactly 9 products. You have selected ${selectedCount}.`, 'error');
+            const allSelected = Object.values(trendingProductsMap).flat();
+            if (allSelected.length !== 9) {
+                showToast(`Please select exactly 9 products. You have selected ${allSelected.length}.`, 'error');
                 return;
             }
 
-            // Validate category constraint: 7 categories with 1, 1 category with 2
-            const categoryCounts = {};
-            trendingProducts.forEach(productInfo => {
-                if (!productInfo) return;
-                // We stored either full product object or just an ID with _tempDisplay.
-                // Let's assume we fetch full product object into state or lookup by ID.
-                const product = typeof productInfo === 'object' && productInfo.categorySlug ? 
-                    productInfo : 
-                    allProducts.find(p => p._id === (productInfo._id || productInfo));
-                
-                if (product) {
-                    categoryCounts[product.categorySlug] = (categoryCounts[product.categorySlug] || 0) + 1;
-                }
-            });
+            const hasEmptyCategory = Object.values(trendingProductsMap).some(arr => arr.length === 0);
 
-            const counts = Object.values(categoryCounts);
-            const hasOneWithTwo = counts.filter(c => c === 2).length === 1;
-            const hasSevenWithOne = counts.filter(c => c === 1).length === 7;
-
-            if (!hasOneWithTwo || !hasSevenWithOne) {
-                showToast('Category distribution invalid. Must have exactly 1 category with 2 products, and 7 categories with 1 product.', 'error');
+            if (hasEmptyCategory) {
+                showToast('Category distribution invalid. You must select at least 1 product from every category.', 'error');
                 return;
             }
 
             setIsSaving(true);
             try {
-                const payloadProducts = trendingProducts.map(p => p._id || p);
+                const payloadProducts = allSelected.map(p => p._id);
 
                 const res = await fetch('http://localhost:5000/api/trending-config', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({ products: payloadProducts })
                 });
                 
@@ -196,23 +206,19 @@ const HomepageManager = () => {
         }
     };
 
-    const openProductPicker = (slideIndex) => {
+    const openHeroProductPicker = (slideIndex) => {
         setCurrentSlideIndex(slideIndex);
-        
-        // Pre-fill with existing selections for this slide
         const existingSelections = slides[slideIndex].products
             .filter(slot => slot && slot.product)
             .map(slot => typeof slot.product === 'object' ? slot.product._id : slot.product);
             
-        setTempSelectedProducts(existingSelections);
-        setIsModalOpen(true);
+        setTempSelectedHeroProducts(existingSelections);
+        setIsHeroModalOpen(true);
     };
 
-    const toggleProductSelection = (productId) => {
-        setTempSelectedProducts(prev => {
-            if (prev.includes(productId)) {
-                return prev.filter(id => id !== productId);
-            }
+    const toggleHeroProductSelection = (productId) => {
+        setTempSelectedHeroProducts(prev => {
+            if (prev.includes(productId)) return prev.filter(id => id !== productId);
             if (prev.length >= 3) {
                 showToast('You can only select up to 3 products', 'error');
                 return prev;
@@ -221,8 +227,8 @@ const HomepageManager = () => {
         });
     };
 
-    const handleConfirmSelection = () => {
-        if (tempSelectedProducts.length !== 3) {
+    const handleConfirmHeroSelection = () => {
+        if (tempSelectedHeroProducts.length !== 3) {
             showToast('Please select exactly 3 products', 'error');
             return;
         }
@@ -230,7 +236,7 @@ const HomepageManager = () => {
         const newSlides = [...slides];
         const labels = ['Natural Herbal', 'Natural Herbal', 'SARA PREMIUM'];
         
-        newSlides[currentSlideIndex].products = tempSelectedProducts.map((productId, index) => {
+        newSlides[currentSlideIndex].products = tempSelectedHeroProducts.map((productId, index) => {
             const product = allProducts.find(p => p._id === productId);
             return {
                 product: product._id,
@@ -243,21 +249,82 @@ const HomepageManager = () => {
         });
         
         setSlides(newSlides);
-        setIsModalOpen(false);
+        setIsHeroModalOpen(false);
     };
 
-    // Filter products by current slide category for the modal
     const getAvailableProductsForCurrentSlide = () => {
         if (currentSlideIndex === -1) return [];
         const slideCategory = slides[currentSlideIndex].slug;
         return allProducts.filter(p => p.categorySlug === slideCategory);
     };
 
+    const openTrendingProductPicker = (categorySlug) => {
+        setCurrentTrendingCat(categorySlug);
+        setTempSelectedTrending(trendingProductsMap[categorySlug].map(p => p._id));
+        setIsTrendingModalOpen(true);
+    };
+
+    const toggleTrendingProductSelection = (productId) => {
+        setTempSelectedTrending(prev => {
+            if (prev.includes(productId)) return prev.filter(id => id !== productId);
+            
+            const hasBonusSlotElsewhere = Object.entries(trendingProductsMap)
+                .some(([slug, arr]) => slug !== currentTrendingCat && arr.length > 1);
+                
+            const maxAllowed = hasBonusSlotElsewhere ? 1 : 2;
+            
+            if (prev.length >= maxAllowed) {
+                showToast(`You can only select up to ${maxAllowed} product(s) for this category.`, 'warning');
+                return prev;
+            }
+
+            // Check overall limit across all categories
+            const otherCategoriesSelected = Object.entries(trendingProductsMap)
+                .filter(([slug]) => slug !== currentTrendingCat)
+                .reduce((acc, [_, arr]) => acc + arr.length, 0);
+
+            if (otherCategoriesSelected + prev.length >= 9) {
+                showToast(`You have reached the maximum of 9 trending products overall. Uncheck a product in another category first.`, 'warning');
+                return prev;
+            }
+
+            return [...prev, productId];
+        });
+    };
+
+    const handleConfirmTrendingSelection = () => {
+        const newMap = { ...trendingProductsMap };
+        newMap[currentTrendingCat] = tempSelectedTrending.map(id => allProducts.find(p => p._id === id));
+        setTrendingProductsMap(newMap);
+        setIsTrendingModalOpen(false);
+    };
+
+    const getAvailableProductsForTrendingCat = () => {
+        if (!currentTrendingCat) return [];
+        return allProducts.filter(p => p.categorySlug === currentTrendingCat);
+    };
+
     return (
         <AdminLayout>
             <div className="homepage-manager">
                 <div className="homepage-manager-header">
-                    <h1>Home Page Manager</h1>
+                    <div>
+                        <h1>Home Page Manager</h1>
+                        <div className="hm-tabs">
+                            <button 
+                                className={`hm-tab ${activeTab === 'hero' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('hero')}
+                            >
+                                Hero Banners
+                            </button>
+                            <button 
+                                className={`hm-tab ${activeTab === 'trending' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('trending')}
+                            >
+                                Trending Products
+                            </button>
+                        </div>
+                    </div>
                     <button 
                         className="btn btn-primary" 
                         onClick={handleSave}
@@ -270,79 +337,143 @@ const HomepageManager = () => {
                 {isLoading ? (
                     <div className="loading-state">Loading configuration...</div>
                 ) : (
-                    <div className="hm-slides-grid">
-                        {slides.map((slide, slideIndex) => {
-                            const hasProducts = slide.products.some(slot => slot && slot.product);
-                            return (
-                                <div className="hm-slide-card" key={slide.slug || slideIndex}>
-                                    <div className="hm-slide-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <h3>{slide.title}</h3>
-                                            <p>{slide.subtitle}</p>
-                                        </div>
-                                        <button 
-                                            className="btn-select-products"
-                                            onClick={() => openProductPicker(slideIndex)}
-                                        >
-                                            {hasProducts ? 'Edit Products' : 'Add Products'}
-                                        </button>
-                                    </div>
-                                    <div className="hm-product-slots">
-                                        {[0, 1, 2].map(slotIndex => {
-                                            const slotData = slide.products[slotIndex];
-                                            // Product data might be populated from backend OR temporarily stored during selection
-                                            const displayProduct = slotData && slotData.product && typeof slotData.product === 'object' 
-                                                ? slotData.product 
-                                                : slotData?._tempDisplay;
-
-                                            return (
-                                                <div 
-                                                    className="hm-product-slot" 
-                                                    key={slotIndex}
-                                                    onClick={() => openProductPicker(slideIndex)}
-                                                    style={{ cursor: 'pointer' }}
+                    <>
+                        {activeTab === 'hero' && (
+                            <div className="hm-slides-grid">
+                                {slides.map((slide, slideIndex) => {
+                                    const hasProducts = slide.products.some(slot => slot && slot.product);
+                                    return (
+                                        <div className="hm-slide-card" key={slide.slug || slideIndex}>
+                                            <div className="hm-slide-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <h3>{slide.title}</h3>
+                                                    <p>{slide.subtitle}</p>
+                                                </div>
+                                                <button 
+                                                    className="btn-select-products"
+                                                    onClick={() => openHeroProductPicker(slideIndex)}
                                                 >
-                                                {displayProduct ? (
-                                                    <>
-                                                        <img 
-                                                            src={displayProduct.images?.[0] || displayProduct.image || '/assets/images/placeholder.png'} 
-                                                            alt={displayProduct.name} 
-                                                            className="hm-slot-image" 
-                                                        />
-                                                        <div className="hm-slot-info">
-                                                            <div className="hm-slot-name">{displayProduct.name}</div>
-                                                            <div className="hm-slot-label">{slotData.label}</div>
+                                                    {hasProducts ? 'Edit Products' : 'Add Products'}
+                                                </button>
+                                            </div>
+                                            <div className="hm-product-slots">
+                                                {[0, 1, 2].map(slotIndex => {
+                                                    const slotData = slide.products[slotIndex];
+                                                    const displayProduct = slotData && slotData.product && typeof slotData.product === 'object' 
+                                                        ? slotData.product 
+                                                        : slotData?._tempDisplay;
+
+                                                    return (
+                                                        <div 
+                                                            className="hm-product-slot" 
+                                                            key={slotIndex}
+                                                            onClick={() => openHeroProductPicker(slideIndex)}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                        {displayProduct ? (
+                                                            <>
+                                                                <img 
+                                                                    src={displayProduct.images?.[0] || displayProduct.image || '/assets/images/placeholder.png'} 
+                                                                    alt={displayProduct.name} 
+                                                                    className="hm-slot-image" 
+                                                                />
+                                                                <div className="hm-slot-info">
+                                                                    <div className="hm-slot-name">{displayProduct.name}</div>
+                                                                    <div className="hm-slot-label">{slotData.label}</div>
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="hm-slot-empty">+</div>
+                                                                <div className="hm-slot-placeholder">Empty Slot</div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {activeTab === 'trending' && (
+                            <div className="hm-trending-section-new">
+                                <div className="hm-trending-instructions">
+                                    <p>Select exactly 9 trending products for the homepage grid.</p>
+                                    <p><strong>Rule:</strong> You must select at least 1 product from each of the 8 categories. Only ONE category can have 2 products.</p>
+                                </div>
+                                
+                                <div className="hm-slides-grid">
+                                    {DEFAULT_SLIDES.map((category) => {
+                                        const selectedForCat = trendingProductsMap[category.slug] || [];
+                                        const totalSelectedAcrossAll = Object.values(trendingProductsMap).flat().length;
+                                        const hasBonusSlotElsewhere = Object.values(trendingProductsMap).some(arr => arr.length > 1);
+                                        
+                                        return (
+                                            <div className="hm-slide-card" key={category.slug}>
+                                                <div className="hm-slide-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        <h3>{category.title}</h3>
+                                                        <p style={{ color: selectedForCat.length > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                                            {selectedForCat.length} product(s) selected
+                                                        </p>
+                                                    </div>
+                                                    <button 
+                                                        className="btn-select-products"
+                                                        onClick={() => openTrendingProductPicker(category.slug)}
+                                                    >
+                                                        {selectedForCat.length > 0 ? 'Edit Products' : 'Add Products'}
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="hm-product-slots">
+                                                    {selectedForCat.map((product, idx) => (
+                                                        <div className="hm-product-slot" key={product._id || idx} onClick={() => openTrendingProductPicker(category.slug)} style={{ cursor: 'pointer' }}>
+                                                             <img src={product.images?.[0] || '/assets/images/placeholder.png'} className="hm-slot-image" alt={product.name} />
+                                                             <div className="hm-slot-info">
+                                                                 <div className="hm-slot-name">{product.name}</div>
+                                                                 <div className="hm-slot-label">Trending</div>
+                                                             </div>
                                                         </div>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="hm-slot-empty">+</div>
-                                                        <div className="hm-slot-placeholder">Empty Slot</div>
-                                                    </>
-                                                )}
+                                                    ))}
+                                                    
+                                                    {selectedForCat.length === 0 && (
+                                                        <div className="hm-product-slot" onClick={() => openTrendingProductPicker(category.slug)} style={{ cursor: 'pointer' }}>
+                                                             <div className="hm-slot-empty">+</div>
+                                                             <div className="hm-slot-placeholder">Required Slot</div>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {selectedForCat.length === 1 && !hasBonusSlotElsewhere && totalSelectedAcrossAll < 9 && (
+                                                        <div className="hm-product-slot" onClick={() => openTrendingProductPicker(category.slug)} style={{ opacity: 0.6, borderStyle: 'dashed', cursor: 'pointer' }}>
+                                                             <div className="hm-slot-empty" style={{ fontSize: '1.2rem' }}>+</div>
+                                                             <div className="hm-slot-placeholder">Optional Bonus Slot</div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}
-                                    </div>
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* Product Picker Modal */}
-            {isModalOpen && (
-                <div className="hm-modal-overlay" onClick={() => setIsModalOpen(false)}>
+            {isHeroModalOpen && (
+                <div className="hm-modal-overlay" onClick={() => setIsHeroModalOpen(false)}>
                     <div className="hm-modal-content" onClick={e => e.stopPropagation()}>
                         <div className="hm-modal-header">
                             <div>
                                 <h3>Select Products for {slides[currentSlideIndex]?.title}</h3>
                                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                                    Select exactly 3 products ({tempSelectedProducts.length}/3 selected)
+                                    Select exactly 3 products ({tempSelectedHeroProducts.length}/3 selected)
                                 </p>
                             </div>
-                            <button className="btn-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+                            <button className="btn-close" onClick={() => setIsHeroModalOpen(false)}>&times;</button>
                         </div>
                         <div className="hm-modal-body">
                             {getAvailableProductsForCurrentSlide().length === 0 ? (
@@ -350,19 +481,19 @@ const HomepageManager = () => {
                             ) : (
                                 <div className="hm-product-list">
                                     {getAvailableProductsForCurrentSlide().map(product => {
-                                        const isSelected = tempSelectedProducts.includes(product._id);
+                                        const isSelected = tempSelectedHeroProducts.includes(product._id);
                                         return (
                                             <div 
                                                 className={`hm-product-item ${isSelected ? 'selected' : ''}`} 
                                                 key={product._id}
-                                                onClick={() => toggleProductSelection(product._id)}
+                                                onClick={() => toggleHeroProductSelection(product._id)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <div className="hm-product-item-info">
                                                     <input 
                                                         type="checkbox" 
                                                         checked={isSelected}
-                                                        onChange={() => {}} // Handled by parent div click
+                                                        onChange={() => {}}
                                                         style={{ marginRight: '10px' }}
                                                     />
                                                     <img src={product.images?.[0] || '/assets/images/placeholder.png'} alt={product.name} />
@@ -380,11 +511,71 @@ const HomepageManager = () => {
                             )}
                         </div>
                         <div className="hm-modal-footer" style={{ padding: 'var(--space-md) var(--space-lg)', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            <button className="btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button className="btn" onClick={() => setIsHeroModalOpen(false)}>Cancel</button>
                             <button 
                                 className="btn btn-primary" 
-                                onClick={handleConfirmSelection}
-                                disabled={tempSelectedProducts.length !== 3}
+                                onClick={handleConfirmHeroSelection}
+                                disabled={tempSelectedHeroProducts.length !== 3}
+                            >
+                                Confirm Selection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isTrendingModalOpen && (
+                <div className="hm-modal-overlay" onClick={() => setIsTrendingModalOpen(false)}>
+                    <div className="hm-modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="hm-modal-header">
+                            <div>
+                                <h3>Select Trending for {DEFAULT_SLIDES.find(c => c.slug === currentTrendingCat)?.title}</h3>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                                    {tempSelectedTrending.length} selected
+                                </p>
+                            </div>
+                            <button className="btn-close" onClick={() => setIsTrendingModalOpen(false)}>&times;</button>
+                        </div>
+                        <div className="hm-modal-body">
+                            {getAvailableProductsForTrendingCat().length === 0 ? (
+                                <p>No products found in this category.</p>
+                            ) : (
+                                <div className="hm-product-list">
+                                    {getAvailableProductsForTrendingCat().map(product => {
+                                        const isSelected = tempSelectedTrending.includes(product._id);
+                                        return (
+                                            <div 
+                                                className={`hm-product-item ${isSelected ? 'selected' : ''}`} 
+                                                key={product._id}
+                                                onClick={() => toggleTrendingProductSelection(product._id)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <div className="hm-product-item-info">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isSelected}
+                                                        onChange={() => {}}
+                                                        style={{ marginRight: '10px' }}
+                                                    />
+                                                    <img src={product.images?.[0] || '/assets/images/placeholder.png'} alt={product.name} />
+                                                    <div>
+                                                        <div style={{fontWeight: 500}}>{product.name}</div>
+                                                        <div style={{fontSize: '0.8rem', color: '#666'}}>
+                                                            Rs. {product.discountPrice || product.price}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        <div className="hm-modal-footer" style={{ padding: 'var(--space-md) var(--space-lg)', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button className="btn" onClick={() => setIsTrendingModalOpen(false)}>Cancel</button>
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={handleConfirmTrendingSelection}
                             >
                                 Confirm Selection
                             </button>
