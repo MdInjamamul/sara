@@ -42,6 +42,11 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    stock: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     isFeatured: {
         type: Boolean,
         default: false
@@ -62,55 +67,10 @@ const productSchema = new mongoose.Schema({
     },
     ingredients: [{
         type: String
-    }],
-    stock: {
-        type: Number,
-        default: 0
-    },
-    totalSold: {
-        type: Number,
-        default: 0
-    },
-    isOffer: {
-        type: Boolean,
-        default: false
-    },
-    offerLabel: {
-        type: String,
-        default: ''
-    },
-    manualBestseller: {
-        type: Boolean,
-        default: null // null means auto-compute
-    },
-    manualNew: {
-        type: Boolean,
-        default: null // null means auto-compute
-    }
+    }]
 }, {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
-});
-
-// Pre-save hook to auto-compute isNew and isBestseller if not manually set
-productSchema.pre('save', function(next) {
-    // Auto-compute isBestseller based on totalSold (threshold: 50)
-    if (this.manualBestseller === null) {
-        this.isBestseller = this.totalSold >= 50;
-    } else {
-        this.isBestseller = this.manualBestseller;
-    }
-
-    // Auto-compute isNew based on createdAt (threshold: 30 days)
-    if (this.manualNew === null) {
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        this.isNew = (this.createdAt || new Date()) > thirtyDaysAgo;
-    } else {
-        this.isNew = this.manualNew;
-    }
-
-    next();
+    suppressReservedKeysWarning: true
 });
 
 module.exports = mongoose.model('Product', productSchema);

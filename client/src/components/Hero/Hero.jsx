@@ -1,157 +1,152 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import gsap from 'gsap';
 import './Hero.css';
 
 const Hero = () => {
+    // Slide data with titles, descriptions, and product images
     const [slides, setSlides] = useState([]);
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const slideRef = useRef(null);
+    const [isLoading, setIsLoading] = useState(true);
 
+    // Fetch config on mount
     useEffect(() => {
-        const fetchSlides = async () => {
+        const fetchConfig = async () => {
             try {
-                const res = await fetch('/api/homepage');
+                const res = await fetch('http://localhost:5000/api/hero-config');
                 const data = await res.json();
-                if (data.heroSlides && data.heroSlides.length > 0) {
-                    setSlides(data.heroSlides);
+                if (data && data.slides && data.slides.length > 0) {
+                    const validSlides = data.slides.filter(s => s.products && s.products.length === 3);
+                    setSlides(validSlides);
+                } else {
+                    setSlides([]); // Handle empty state
                 }
-            } catch (error) {
-                console.error("Failed to load hero slides:", error);
+            } catch (err) {
+                console.error("Failed to load hero config:", err);
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         };
-        fetchSlides();
+        fetchConfig();
     }, []);
 
-    useEffect(() => {
-        if (!loading && slides.length > 0 && slideRef.current) {
-            const tl = gsap.timeline();
-            tl.fromTo(slideRef.current.querySelectorAll('.hero-subtitle, .hero-title, .hero-description, .hero-cta'),
-                { y: 30, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out' }
-            );
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
 
-            tl.fromTo(slideRef.current.querySelectorAll('.hero-product-card'),
-                { y: 50, opacity: 0, scale: 0.9 },
-                { y: 0, opacity: 1, scale: 1, duration: 0.8, stagger: 0.15, ease: 'back.out(1.2)' },
-                "-=0.6"
-            );
-        }
-    }, [currentSlide, loading, slides.length]);
+    const goToSlide = useCallback((index) => {
+        if (isAnimating) return;
+        setIsAnimating(true);
+        setCurrentSlide(index);
+        setTimeout(() => setIsAnimating(false), 600);
+    }, [isAnimating]);
 
+    const nextSlide = useCallback(() => {
+        goToSlide((currentSlide + 1) % slides.length);
+    }, [currentSlide, slides.length, goToSlide]);
+
+    const prevSlide = useCallback(() => {
+        goToSlide((currentSlide - 1 + slides.length) % slides.length);
+    }, [currentSlide, slides.length, goToSlide]);
+
+    // Auto-slide every 5 seconds
     useEffect(() => {
         if (slides.length <= 1) return;
-        const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length);
-        }, 6000);
-        return () => clearInterval(timer);
-    }, [slides.length]);
+        const interval = setInterval(() => {
+            nextSlide();
+        }, 5000);
 
-    if (loading) {
-        return <div className="hero loading"><div className="spinner" style={{ margin: 'auto', borderTopColor: '#4ade80', width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', animation: 'spin 1s linear infinite' }}></div></div>;
+        return () => clearInterval(interval);
+    }, [nextSlide, slides.length]);
+
+    if (isLoading) {
+        return <div className="hero-slider-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
     }
 
     if (slides.length === 0) {
-        return null; // Don't render hero if no slides are active
+        return null;
     }
 
-    const slide = slides[currentSlide];
+    const currentSlideData = slides[currentSlide];
 
     return (
-        <section className="hero">
-            <div
-                className="hero-background"
-                style={{
-                    background: `linear-gradient(135deg, ${slide.accentColor}15 0%, ${slide.accentColor}05 100%)`
-                }}
-            />
+        <section className="hero-slider-section">
+            <div className="hero-slider-container">
+                {/* Left Arrow */}
+                <button
+                    className="hero-nav-arrow hero-nav-prev"
+                    onClick={prevSlide}
+                    aria-label="Previous slide"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </button>
 
-            <div className="hero-container" ref={slideRef}>
-                <div className="hero-content">
-                    <span 
-                        className="hero-subtitle"
-                        style={{ color: slide.accentColor }}
-                    >
-                        {slide.subtitle}
-                    </span>
-                    <h1 className="hero-title">{slide.title}</h1>
-                    <p className="hero-description">{slide.description}</p>
-                    
-                    <Link
-                        to={`/products?category=${slide.categorySlug}`}
-                        className="hero-cta"
-                        style={{
-                            backgroundColor: slide.accentColor,
-                            boxShadow: `0 8px 24px ${slide.accentColor}40`
-                        }}
-                    >
-                        Shop Collection
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </Link>
-                </div>
+                {/* Slide Content */}
+                <div className="hero-slide-content">
+                    {/* Left Side - Text */}
+                    <div className="hero-slide-text">
+                        <h1
+                            className="hero-slide-title"
+                            style={{ color: currentSlideData.accentColor }}
+                            key={`title-${currentSlide}`}
+                        >
+                            {currentSlideData.title}
+                        </h1>
+                        <Link
+                            to={`/products?category=${currentSlideData.slug}`}
+                            className="hero-see-more-btn"
+                            style={{ backgroundColor: currentSlideData.accentColor }}
+                        >
+                            See More
+                        </Link>
+                    </div>
 
-                <div className="hero-visuals">
-                    <div className="hero-products-grid">
-                        {slide.products.map((product, index) => (
-                            <Link 
-                                to={`/products/${product.slug}`} 
-                                key={product._id || index}
-                                className={`hero-product-card card-${index + 1}`}
-                            >
-                                <div className="hpc-image">
-                                    <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} />
-                                    {product.discountPrice && (
-                                        <div className="hpc-discount-badge" style={{ backgroundColor: slide.accentColor, position: 'absolute', top: '10px', right: '10px', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                            Save {Math.round((1 - product.discountPrice / product.price) * 100)}%
-                                        </div>
-                                    )}
+                    {/* Right Side - Products */}
+                    <div className="hero-products-display" key={`products-${currentSlide}`}>
+                        {currentSlideData.products.map((slot, index) => {
+                            if (!slot || !slot.product) return null;
+                            const product = slot.product;
+                            return (
+                                <div
+                                    className={`hero-product-item hero-product-item-${index + 1}`}
+                                    key={`${currentSlide}-${index}`}
+                                >
+                                    <div className="hero-product-label">{currentSlideData.subtitle}</div>
+                                    <img
+                                        src={product.images?.[0] || '/assets/images/placeholder.png'}
+                                        alt={product.name}
+                                        className="hero-product-image"
+                                    />
+                                    <div className="hero-product-name">{product.name}</div>
+                                    <div className="hero-product-tag">{slot.label}</div>
                                 </div>
-                                <div className="hpc-info">
-                                    <h3>{product.name}</h3>
-                                    <div className="hpc-price">
-                                        {product.discountPrice ? (
-                                            <>
-                                                <span className="current" style={{ color: slide.accentColor, fontWeight: 'bold', marginRight: '8px' }}>
-                                                    Rs. {product.discountPrice.toLocaleString()}
-                                                </span>
-                                                <span className="original" style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.9rem' }}>
-                                                    Rs. {product.price.toLocaleString()}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <span className="current" style={{ color: slide.accentColor, fontWeight: 'bold' }}>
-                                                Rs. {product.price.toLocaleString()}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
+
+                {/* Right Arrow */}
+                <button
+                    className="hero-nav-arrow hero-nav-next"
+                    onClick={nextSlide}
+                    aria-label="Next slide"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </button>
             </div>
 
-            {slides.length > 1 && (
-                <div className="hero-controls">
-                    <div className="hero-dots">
-                        {slides.map((_, index) => (
-                            <button
-                                key={index}
-                                className={`hero-dot ${currentSlide === index ? 'active' : ''}`}
-                                onClick={() => setCurrentSlide(index)}
-                                aria-label={`Go to slide ${index + 1}`}
-                                style={currentSlide === index ? { backgroundColor: slide.accentColor } : {}}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
+            {/* Dot Indicators */}
+            <div className="hero-slide-dots">
+                {slides.map((_, index) => (
+                    <button
+                        key={index}
+                        className={`hero-slide-dot ${index === currentSlide ? 'active' : ''}`}
+                        onClick={() => goToSlide(index)}
+                        aria-label={`Go to slide ${index + 1}`}
+                    />
+                ))}
+            </div>
         </section>
     );
 };

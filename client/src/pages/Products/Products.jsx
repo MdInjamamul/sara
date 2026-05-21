@@ -1,215 +1,193 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import ProductCard from '../../components/ProductCard/ProductCard';
+import { useSearchParams, Link } from 'react-router-dom';
+import Navbar from '../../components/Navbar/Navbar';
+import Footer from '../../components/Footer/Footer';
 import './Products.css';
+
+const formatProduct = (p) => ({
+    id: p._id,
+    name: p.name,
+    slug: p.slug,
+    price: p.discountPrice ? p.discountPrice : p.price,
+    originalPrice: p.discountPrice ? p.price : null,
+    image: p.images && p.images.length > 0 ? p.images[0] : '/assets/images/placeholder.png',
+    category: p.categorySlug,
+    isNew: p.isNew
+});
+
+const categories = [
+    { value: 'all', label: 'All Products' },
+    { value: 'medicinal-herbs', label: 'Medicinal Herbs' },
+    { value: 'essential-oils', label: 'Natural Essential Oils' },
+    { value: 'herbal-oils', label: 'Natural Herbal Oils' },
+    { value: 'superfoods', label: 'Natural Organic Super Foods' },
+    { value: 'cosmetics', label: 'Natural Cosmetics' },
+    { value: 'spices', label: 'Natural Organic Spices' },
+    { value: 'spiritual-items', label: 'Spiritual Items' },
+    { value: 'nursery', label: 'Sara Nursery' }
+];
 
 const Products = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    
-    // Read URL params
     const initialCategory = searchParams.get('category') || 'all';
-    const initialPage = parseInt(searchParams.get('page')) || 1;
-
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
     
-    // Filters and Pagination State
-    const [activeCategory, setActiveCategory] = useState(initialCategory);
-    const [page, setPage] = useState(initialPage);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalProducts, setTotalProducts] = useState(0);
-    const [sortBy, setSortBy] = useState('newest');
+    const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch Categories
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const res = await fetch('/api/categories');
-                const data = await res.json();
-                setCategories(data);
-            } catch (error) {
-                console.error("Failed to load categories", error);
-            }
-        };
-        fetchCategories();
-    }, []);
-
-    // Fetch Products when filters change
     useEffect(() => {
         const fetchProducts = async () => {
-            setLoading(true);
             try {
-                // We use the admin endpoint structure, or ideally a public product list endpoint
-                // Since our public endpoint in productController doesn't have pagination yet, we'll use the admin one or build it.
-                // Wait, productController.js exists. Let's see if we can just hit /api/products
-                let url = `/api/products?page=${page}&limit=12`;
-                if (activeCategory !== 'all') {
-                    url += `&category=${activeCategory}`;
-                }
-
-                // If the backend /api/products doesn't support pagination, we might need to fallback to /api/admin/products for now
-                // Actually, let's use the admin endpoint for now just to get the data working with pagination
-                url = `/api/admin/products?page=${page}&limit=12`;
-                if (activeCategory !== 'all') {
-                    url += `&category=${activeCategory}`;
-                }
-
-                const res = await fetch(url);
+                const res = await fetch('http://localhost:5000/api/products');
                 const data = await res.json();
-                
-                // Assuming admin endpoint response: { products, page, pages, total }
-                let fetchedProducts = data.products || [];
-                
-                // Client-side sorting for now since admin API doesn't support generic sort
-                if (sortBy === 'price-low') {
-                    fetchedProducts.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
-                } else if (sortBy === 'price-high') {
-                    fetchedProducts.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
-                }
-
-                setProducts(fetchedProducts);
-                setTotalPages(data.pages || 1);
-                setTotalProducts(data.total || fetchedProducts.length);
-
-                // Update URL silently
-                setSearchParams({ category: activeCategory, page }, { replace: true });
+                setProducts(data.map(formatProduct));
+                setIsLoading(false);
             } catch (error) {
                 console.error("Failed to fetch products:", error);
-            } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         };
-
         fetchProducts();
-    }, [activeCategory, page, sortBy, setSearchParams]);
+    }, []);
 
-    const handleCategoryChange = (categorySlug) => {
-        setActiveCategory(categorySlug);
-        setPage(1); // Reset to first page
+    // Sync with URL changes (e.g., when clicking back button or links from home page)
+    useEffect(() => {
+        const categoryFromUrl = searchParams.get('category') || 'all';
+        if (categoryFromUrl !== selectedCategory) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSelectedCategory(categoryFromUrl);
+            setCurrentPage(1);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
+
+    const itemsPerPage = 12;
+
+    const filteredProducts = selectedCategory === 'all'
+        ? products
+        : products.filter(p => p.category === selectedCategory);
+
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category);
+        setCurrentPage(1);
+        setIsDropdownOpen(false);
+        
+        if (category === 'all') {
+            searchParams.delete('category');
+            setSearchParams(searchParams);
+        } else {
+            setSearchParams({ category });
+        }
     };
+
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const selectedCategoryLabel = categories.find(c => c.value === selectedCategory)?.label || 'All Products';
 
     return (
         <div className="products-page">
-            <div className="products-header">
+            <Navbar />
+
+            <main className="products-main">
                 <div className="container">
-                    <h1>Our Natural Collection</h1>
-                    <p>Discover our complete range of organic and natural products.</p>
-                </div>
-            </div>
+                    <h1 className="products-title">{selectedCategoryLabel}</h1>
 
-            <div className="container">
-                <div className="products-layout">
-                    {/* Sidebar Filters */}
-                    <aside className="products-sidebar">
-                        <div className="filter-widget">
-                            <h3>Categories</h3>
-                            <ul className="category-list">
-                                <li className={activeCategory === 'all' ? 'active' : ''}>
-                                    <button onClick={() => handleCategoryChange('all')}>
-                                        All Products
-                                    </button>
-                                </li>
-                                {categories.map(category => (
-                                    <li 
-                                        key={category._id} 
-                                        className={activeCategory === category.slug ? 'active' : ''}
-                                    >
-                                        <button onClick={() => handleCategoryChange(category.slug)}>
-                                            {category.name}
-                                            <span className="count">({category.productCount || 0})</span>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </aside>
+                    <div className="products-header">
+                        <p className="products-count">{isLoading ? 'Loading products...' : `Showing ${filteredProducts.length} Results`}</p>
 
-                    {/* Main Content */}
-                    <div className="products-main">
-                        <div className="products-toolbar">
-                            <div className="results-count">
-                                Showing {products.length} of {totalProducts} products
-                            </div>
-                            <div className="sort-controls">
-                                <label>Sort by:</label>
-                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                    <option value="newest">Newest Arrivals</option>
-                                    <option value="price-low">Price: Low to High</option>
-                                    <option value="price-high">Price: High to Low</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {loading ? (
-                            <div className="products-grid loading-grid" style={{ opacity: 0.5 }}>
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} style={{ height: '350px', backgroundColor: 'var(--surface-color)', borderRadius: '16px' }} />
-                                ))}
-                            </div>
-                        ) : products.length > 0 ? (
-                            <>
-                                <div className="products-grid">
-                                    {products.map(product => (
-                                        <ProductCard key={product._id} product={product} />
-                                    ))}
-                                </div>
-
-                                {totalPages > 1 && (
-                                    <div className="pagination">
-                                        <button 
-                                            className="page-btn prev"
-                                            disabled={page === 1}
-                                            onClick={() => setPage(p => p - 1)}
-                                        >
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polyline points="15 18 9 12 15 6"></polyline>
-                                            </svg>
-                                        </button>
-                                        
-                                        <div className="page-numbers">
-                                            {[...Array(totalPages)].map((_, i) => (
-                                                <button
-                                                    key={i + 1}
-                                                    className={`page-number ${page === i + 1 ? 'active' : ''}`}
-                                                    onClick={() => setPage(i + 1)}
-                                                >
-                                                    {i + 1}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <button 
-                                            className="page-btn next"
-                                            disabled={page === totalPages}
-                                            onClick={() => setPage(p => p + 1)}
-                                        >
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="no-products-found">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <div className="products-filter">
+                            <div
+                                className={`filter-dropdown ${isDropdownOpen ? 'open' : ''}`}
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            >
+                                <span>{selectedCategoryLabel}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="m6 9 6 6 6-6" />
                                 </svg>
-                                <h3>No products found</h3>
-                                <p>Try selecting a different category or clearing your filters.</p>
-                                <button 
-                                    className="btn-primary"
-                                    onClick={() => handleCategoryChange('all')}
-                                >
-                                    View All Products
-                                </button>
+
+                                {isDropdownOpen && (
+                                    <ul className="dropdown-menu">
+                                        {categories.map(cat => (
+                                            <li
+                                                key={cat.value}
+                                                className={selectedCategory === cat.value ? 'active' : ''}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCategoryChange(cat.value);
+                                                }}
+                                            >
+                                                {cat.label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </div>
+
+                    <div className="products-grid">
+                        {paginatedProducts.map(product => (
+                            <Link to={`/products/${product.slug}`} key={product.id} className="product-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <div className="product-image">
+                                    {product.isNew && <span className="product-badge">New</span>}
+                                    <img src={product.image} alt={product.name} />
+                                    <span className="product-buy-btn">View Details</span>
+                                </div>
+                                <div className="product-info">
+                                    <h3 className="product-name">{product.name}</h3>
+                                    <div className="product-price">
+                                        <span className="current-price">NPR {product.price.toFixed(2)}</span>
+                                        {product.originalPrice && (
+                                            <span className="original-price">NPR {product.originalPrice.toFixed(2)}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="pagination">
+                            <button 
+                                className="pagination-btn" 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="pagination-numbers">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button 
+                                        key={i + 1}
+                                        className={`pagination-number ${currentPage === i + 1 ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button 
+                                className="pagination-btn" 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
-            </div>
+            </main>
+
+            <Footer />
         </div>
     );
 };

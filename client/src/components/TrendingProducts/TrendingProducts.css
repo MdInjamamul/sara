@@ -1,55 +1,31 @@
 /* Trending Products Section */
-.trending-section {
+.trending-products {
     padding: var(--space-4xl) 0;
 }
 
-.trending-section .section-header {
+.trending-products .section-header {
     margin-bottom: var(--space-2xl);
-    text-align: center;
 }
 
-.trending-grid {
+.trending-products-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--space-xl);
-    margin-bottom: var(--space-2xl);
-}
-
-.view-all-container {
-    text-align: center;
-    margin-top: var(--space-2xl);
-}
-
-.btn-view-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: var(--primary-color);
-    color: var(--text-inverse);
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-.btn-view-all:hover {
-    background-color: var(--primary-dark);
-}
-
-.btn-view-all svg {
-    width: 20px;
-    height: 20px;
 }
 
 @media (max-width: 992px) {
-    .trending-grid {
+    .trending-products-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 576px) {
-    .trending-grid {
+    .trending-products-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.trending-products-footer {
+    text-align: center;
+    margin-top: var(--space-2xl);
 }

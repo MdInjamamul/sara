@@ -1,29 +1,24 @@
-const Category = require('../models/Category');
+const asyncHandler = require('../middleware/asyncHandler');
+const categoryService = require('../services/categoryService');
+const { categoryDto, categoryListDto } = require('../dtos/output/categoryDto');
+
+/**
+ * Category Controller — Thin orchestration layer.
+ */
 
 // @desc    Get all categories
 // @route   GET /api/categories
-const getCategories = async (req, res) => {
-    try {
-        const categories = await Category.find({});
-        res.json(categories);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+const getCategories = asyncHandler(async (req, res) => {
+    const categories = await categoryService.getAllCategories();
+    res.json(categoryListDto(categories));
+});
 
 // @desc    Get single category by slug
 // @route   GET /api/categories/:slug
-const getCategoryBySlug = async (req, res) => {
-    try {
-        const category = await Category.findOne({ slug: req.params.slug });
-        if (!category) {
-            return res.status(404).json({ message: 'Category not found' });
-        }
-        res.json(category);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
+const getCategoryBySlug = asyncHandler(async (req, res) => {
+    const category = await categoryService.getCategoryBySlug(req.params.slug);
+    res.json(categoryDto(category));
+});
 
 module.exports = {
     getCategories,

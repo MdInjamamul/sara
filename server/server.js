@@ -6,10 +6,9 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const adminProductRoutes = require('./routes/adminProductRoutes');
-const adminHomepageRoutes = require('./routes/adminHomepageRoutes');
-const homepageRoutes = require('./routes/homepageRoutes');
+const heroConfigRoutes = require('./routes/heroConfigRoutes');
+const trendingConfigRoutes = require('./routes/trendingConfigRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -21,17 +20,16 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from client build and uploads
+// Serve static files from client build
 app.use('/assets', express.static(path.join(__dirname, '../client/public/assets')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
-app.use('/api/homepage', homepageRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
-app.use('/api/admin/products', adminProductRoutes);
-app.use('/api/admin/homepage', adminHomepageRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/hero-config', heroConfigRoutes);
+app.use('/api/trending-config', trendingConfigRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
