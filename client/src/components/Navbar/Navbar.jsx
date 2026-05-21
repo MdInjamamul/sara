@@ -31,6 +31,7 @@ const Navbar = () => {
                     <li><Link to="/products" className={isActive('/products') ? 'active' : ''}>Products</Link></li>
                     <li><Link to="/blog" className={isActive('/blog') ? 'active' : ''}>Blog</Link></li>
                     <li><Link to="/contact" className={isActive('/contact') ? 'active' : ''}>Contact</Link></li>
+                    <li><Link to="/admin/dashboard" className={isActive('/admin/dashboard') ? 'active' : ''}>Dashboard</Link></li>
                 </ul>
 
                 <div className="navbar-actions">

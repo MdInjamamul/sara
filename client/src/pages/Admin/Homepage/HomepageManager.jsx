@@ -1,513 +1,406 @@
 import { useState, useEffect } from 'react';
-import { useToast } from '../../../context/ToastContext';
+import AdminLayout from '../../../components/AdminLayout/AdminLayout';
+import Toast from '../../../components/Toast/Toast';
 import './HomepageManager.css';
 
+const DEFAULT_SLIDES = [
+    {
+        title: 'Medicinal Herbs', subtitle: 'NATURAL HEALING', slug: 'medicinal-herbs',
+        description: 'Ancient Himalayan herbs for natural wellness and vitality', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Natural Cosmetics', subtitle: 'PURE BEAUTY', slug: 'cosmetics',
+        description: 'Organic skincare crafted with nature\'s finest ingredients', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Essential Oils', subtitle: 'PURE AROMATHERAPY', slug: 'essential-oils',
+        description: 'Premium botanical extracts for wellness and relaxation', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Herbal Oils', subtitle: 'THERAPEUTIC WELLNESS', slug: 'herbal-oils',
+        description: 'Cold-pressed natural oils for health and vitality', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Organic Spices', subtitle: 'PURE & NATURAL', slug: 'spices',
+        description: 'Authentic spices sourced from organic farms', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Superfoods', subtitle: 'NUTRIENT RICH', slug: 'superfoods',
+        description: 'Power-packed organic superfoods for optimal health', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Sara Nursery', subtitle: 'GREEN LIVING', slug: 'nursery',
+        description: 'Healthy plants for your home and garden', accentColor: '#8B4513',
+        products: [null, null, null]
+    },
+    {
+        title: 'Spiritual', subtitle: 'SACRED ESSENTIALS', slug: 'spiritual-items',
+        description: 'Traditional spiritual items for meditation and prayer', accentColor: '#8B4513',
+        products: [null, null, null]
+    }
+];
+
 const HomepageManager = () => {
-    const [config, setConfig] = useState(null);
-    const [categories, setCategories] = useState([]);
-    const [products, setProducts] = useState([]); // All products for selection
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('hero'); // 'hero', 'trending', 'categories'
+    const [slides, setSlides] = useState(DEFAULT_SLIDES);
+    const [trendingProducts, setTrendingProducts] = useState(Array(9).fill(null));
     
-    // Modal state for product selection
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalContext, setModalContext] = useState(null); // { type, slideIndex, categorySlug }
-    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'trending'
+    
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const [allProducts, setAllProducts] = useState([]);
+    
+    // Modal states for Hero
+    const [isHeroModalOpen, setIsHeroModalOpen] = useState(false);
+    const [currentSlideIndex, setCurrentSlideIndex] = useState(-1);
+    const [tempSelectedHeroProducts, setTempSelectedHeroProducts] = useState([]);
+    
+    // Modal states for Trending
+    const [isTrendingModalOpen, setIsTrendingModalOpen] = useState(false);
+    const [currentTrendingSlotIndex, setCurrentTrendingSlotIndex] = useState(-1);
+    
+    const [toast, setToast] = useState({ message: '', type: 'success' });
 
-    const toast = useToast();
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const [configRes, catRes, prodRes] = await Promise.all([
-                fetch('/api/admin/homepage'),
-                fetch('/api/categories'),
-                fetch('/api/admin/products?limit=1000') // Get all for simple modal picking
-            ]);
-
-            const configData = await configRes.json();
-            const catData = await catRes.json();
-            const prodData = await prodRes.json();
-
-            // Initialize default structure if empty
-            if (!configData.heroSlides) configData.heroSlides = [];
-            if (!configData.trendingProducts) configData.trendingProducts = [];
-            if (!configData.populatedCategoryDisplay) configData.populatedCategoryDisplay = {};
-
-            // Ensure hero slides exist for all categories
-            catData.forEach(cat => {
-                const exists = configData.heroSlides.find(s => s.categorySlug === cat.slug);
-                if (!exists) {
-                    configData.heroSlides.push({
-                        categorySlug: cat.slug,
-                        title: cat.name,
-                        subtitle: 'NEW ARRIVALS',
-                        description: 'Discover our amazing products.',
-                        accentColor: '#4ade80',
-                        products: [],
-                        isActive: false
-                    });
-                }
-            });
-
-            setConfig(configData);
-            setCategories(catData);
-            setProducts(prodData.products || []);
-        } catch (error) {
-            toast.error('Failed to load homepage configuration');
-        } finally {
-            setLoading(false);
-        }
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
     };
 
     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch products
+                const prodRes = await fetch('http://localhost:5000/api/products');
+                const productsData = await prodRes.json();
+                setAllProducts(productsData);
+
+                // Fetch config
+                const configRes = await fetch('http://localhost:5000/api/hero-config');
+                const configData = await configRes.json();
+                
+                if (configData && configData.slides && configData.slides.length > 0) {
+                    setSlides(configData.slides);
+                }
+
+                // Fetch trending config
+                const trendingRes = await fetch('http://localhost:5000/api/trending-config');
+                const trendingData = await trendingRes.json();
+                
+                if (trendingData && trendingData.length === 9) {
+                    setTrendingProducts(trendingData);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                showToast("Failed to load configuration", "error");
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchData();
     }, []);
 
-    // --- Hero Management ---
-
-    const handleHeroChange = (slideIndex, field, value) => {
-        const newConfig = { ...config };
-        newConfig.heroSlides[slideIndex][field] = value;
-        setConfig(newConfig);
-    };
-
-    const removeProductFromHero = (slideIndex, productId) => {
-        const newConfig = { ...config };
-        newConfig.heroSlides[slideIndex].products = newConfig.heroSlides[slideIndex].products.filter(p => p._id !== productId);
-        setConfig(newConfig);
-    };
-
-    const saveHeroSlides = async () => {
-        try {
-            // Validate exactly 3 products for active slides
-            for (const slide of config.heroSlides) {
-                if (slide.isActive && slide.products.length !== 3) {
-                    toast.error(`Active slide "${slide.title}" must have exactly 3 products selected.`);
+    const handleSave = async () => {
+        if (activeTab === 'hero') {
+            // Validate: each slide must be either completely empty or have exactly 3 products
+            for (const slide of slides) {
+                const productCount = slide.products.filter(slot => slot && slot.product).length;
+                if (productCount > 0 && productCount < 3) {
+                    showToast(`Please select exactly 3 products for "${slide.title}", or leave it empty.`, 'error');
                     return;
                 }
             }
 
-            const formattedSlides = config.heroSlides.map(slide => ({
-                ...slide,
-                products: slide.products.map(p => p._id || p) // ensure we just send IDs
-            }));
+            setIsSaving(true);
+            try {
+                // Filter out nulls/empty for the backend
+                const payloadSlides = slides.map(slide => {
+                    const hasProducts = slide.products.some(slot => slot && slot.product);
+                    return {
+                        ...slide,
+                        products: hasProducts ? slide.products : []
+                    };
+                });
 
-            const res = await fetch('/api/admin/homepage/hero', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ heroSlides: formattedSlides })
-            });
-
-            if (!res.ok) throw new Error('Failed to save Hero settings');
-            toast.success('Hero settings saved successfully');
-            fetchData(); // Refresh to get populated objects again
-        } catch (error) {
-            toast.error(error.message);
-        }
-    };
-
-    // --- Trending Management ---
-
-    const removeProductFromTrending = (productId) => {
-        const newConfig = { ...config };
-        newConfig.trendingProducts = newConfig.trendingProducts.filter(p => p._id !== productId);
-        setConfig(newConfig);
-    };
-
-    const saveTrendingProducts = async () => {
-        try {
-            if (config.trendingProducts.length !== 9) {
-                toast.error(`You must select exactly 9 trending products (currently ${config.trendingProducts.length}).`);
+                const res = await fetch('http://localhost:5000/api/hero-config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slides: payloadSlides })
+                });
+                
+                if (!res.ok) throw new Error('Failed to save Hero configuration');
+                
+                showToast('Hero configuration saved successfully!');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                setIsSaving(false);
+            }
+        } else if (activeTab === 'trending') {
+            const selectedCount = trendingProducts.filter(p => p !== null).length;
+            if (selectedCount !== 9) {
+                showToast(`Please select exactly 9 products. You have selected ${selectedCount}.`, 'error');
                 return;
             }
 
-            // Check max 2 per category rule
-            const catCounts = {};
-            for (const p of config.trendingProducts) {
-                catCounts[p.categorySlug] = (catCounts[p.categorySlug] || 0) + 1;
-                if (catCounts[p.categorySlug] > 2) {
-                    toast.error(`You can select a maximum of 2 products from category '${p.categorySlug}'.`);
-                    return;
+            // Validate category constraint: 7 categories with 1, 1 category with 2
+            const categoryCounts = {};
+            trendingProducts.forEach(productInfo => {
+                if (!productInfo) return;
+                // We stored either full product object or just an ID with _tempDisplay.
+                // Let's assume we fetch full product object into state or lookup by ID.
+                const product = typeof productInfo === 'object' && productInfo.categorySlug ? 
+                    productInfo : 
+                    allProducts.find(p => p._id === (productInfo._id || productInfo));
+                
+                if (product) {
+                    categoryCounts[product.categorySlug] = (categoryCounts[product.categorySlug] || 0) + 1;
                 }
-            }
-
-            const productIds = config.trendingProducts.map(p => p._id || p);
-
-            const res = await fetch('/api/admin/homepage/trending', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ trendingProducts: productIds })
             });
 
-            if (!res.ok) throw new Error(await res.text());
-            toast.success('Trending products saved successfully');
-            fetchData();
-        } catch (error) {
-            toast.error(error.message);
+            const counts = Object.values(categoryCounts);
+            const hasOneWithTwo = counts.filter(c => c === 2).length === 1;
+            const hasSevenWithOne = counts.filter(c => c === 1).length === 7;
+
+            if (!hasOneWithTwo || !hasSevenWithOne) {
+                showToast('Category distribution invalid. Must have exactly 1 category with 2 products, and 7 categories with 1 product.', 'error');
+                return;
+            }
+
+            setIsSaving(true);
+            try {
+                const payloadProducts = trendingProducts.map(p => p._id || p);
+
+                const res = await fetch('http://localhost:5000/api/trending-config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ products: payloadProducts })
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || 'Failed to save Trending configuration');
+                }
+                
+                showToast('Trending configuration saved successfully!');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
-    // --- Category Display Management ---
-
-    const saveCategoryDisplay = async (categorySlug, productId) => {
-        try {
-            const res = await fetch('/api/admin/homepage/categories', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ categorySlug, productId })
-            });
-
-            if (!res.ok) throw new Error('Failed to save category image');
-            toast.success('Category image updated');
-            fetchData();
-        } catch (error) {
-            toast.error(error.message);
-        }
-    };
-
-    // --- Modal Logic ---
-
-    const openModal = (type, slideIndex = null, categorySlug = null) => {
-        setModalContext({ type, slideIndex, categorySlug });
-        setIsModalOpen(true);
-        setSearchQuery('');
-    };
-
-    const handleSelectProduct = (product) => {
-        const { type, slideIndex } = modalContext;
-        const newConfig = { ...config };
-
-        if (type === 'hero') {
-            const slide = newConfig.heroSlides[slideIndex];
-            if (slide.products.find(p => p._id === product._id)) {
-                toast.warning('Product already selected in this slide');
-                return;
-            }
-            if (slide.products.length >= 3) {
-                toast.warning('Maximum 3 products allowed per slide');
-                return;
-            }
-            slide.products.push(product);
-        } else if (type === 'trending') {
-            if (newConfig.trendingProducts.find(p => p._id === product._id)) {
-                toast.warning('Product already in trending');
-                return;
-            }
-            if (newConfig.trendingProducts.length >= 9) {
-                toast.warning('Maximum 9 trending products allowed');
-                return;
-            }
+    const openProductPicker = (slideIndex) => {
+        setCurrentSlideIndex(slideIndex);
+        
+        // Pre-fill with existing selections for this slide
+        const existingSelections = slides[slideIndex].products
+            .filter(slot => slot && slot.product)
+            .map(slot => typeof slot.product === 'object' ? slot.product._id : slot.product);
             
-            // Preview check for 2 per category rule
-            const catCount = newConfig.trendingProducts.filter(p => p.categorySlug === product.categorySlug).length;
-            if (catCount >= 2) {
-                toast.warning(`Maximum 2 products allowed from ${product.categorySlug}`);
-                return;
-            }
+        setTempSelectedProducts(existingSelections);
+        setIsModalOpen(true);
+    };
 
-            newConfig.trendingProducts.push(product);
-        } else if (type === 'category') {
-            // Direct save for category image
-            saveCategoryDisplay(modalContext.categorySlug, product._id);
-            setIsModalOpen(false);
+    const toggleProductSelection = (productId) => {
+        setTempSelectedProducts(prev => {
+            if (prev.includes(productId)) {
+                return prev.filter(id => id !== productId);
+            }
+            if (prev.length >= 3) {
+                showToast('You can only select up to 3 products', 'error');
+                return prev;
+            }
+            return [...prev, productId];
+        });
+    };
+
+    const handleConfirmSelection = () => {
+        if (tempSelectedProducts.length !== 3) {
+            showToast('Please select exactly 3 products', 'error');
             return;
         }
 
-        setConfig(newConfig);
+        const newSlides = [...slides];
+        const labels = ['Natural Herbal', 'Natural Herbal', 'SARA PREMIUM'];
+        
+        newSlides[currentSlideIndex].products = tempSelectedProducts.map((productId, index) => {
+            const product = allProducts.find(p => p._id === productId);
+            return {
+                product: product._id,
+                label: labels[index],
+                _tempDisplay: {
+                    name: product.name,
+                    image: product.images?.[0] || '/assets/images/placeholder.png'
+                }
+            };
+        });
+        
+        setSlides(newSlides);
         setIsModalOpen(false);
     };
 
-    // Filter products for modal
-    const filteredModalProducts = products.filter(p => {
-        // Filter by search
-        if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-        
-        // Filter by context constraints
-        if (modalContext?.type === 'hero') {
-            const requiredCat = config.heroSlides[modalContext.slideIndex].categorySlug;
-            return p.categorySlug === requiredCat;
-        }
-        if (modalContext?.type === 'category') {
-            return p.categorySlug === modalContext.categorySlug;
-        }
-        return true; // trending can be any category
-    });
-
-
-    if (loading) return <div className="admin-loading"><div className="admin-spinner"></div><p>Loading config...</p></div>;
+    // Filter products by current slide category for the modal
+    const getAvailableProductsForCurrentSlide = () => {
+        if (currentSlideIndex === -1) return [];
+        const slideCategory = slides[currentSlideIndex].slug;
+        return allProducts.filter(p => p.categorySlug === slideCategory);
+    };
 
     return (
-        <div className="homepage-manager">
-            <div className="admin-page-header">
-                <h2>Homepage Configuration</h2>
-            </div>
+        <AdminLayout>
+            <div className="homepage-manager">
+                <div className="homepage-manager-header">
+                    <h1>Home Page Manager</h1>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={handleSave}
+                        disabled={isSaving || isLoading}
+                    >
+                        {isSaving ? 'Saving...' : 'Save Configuration'}
+                    </button>
+                </div>
 
-            <div className="admin-tabs">
-                <button 
-                    className={`admin-tab ${activeTab === 'hero' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('hero')}
-                >
-                    Hero Slides
-                </button>
-                <button 
-                    className={`admin-tab ${activeTab === 'trending' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('trending')}
-                >
-                    Trending Products
-                </button>
-                <button 
-                    className={`admin-tab ${activeTab === 'categories' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('categories')}
-                >
-                    Category Images
-                </button>
-            </div>
-
-            <div className="admin-tab-content">
-                
-                {/* --- HERO SLIDES TAB --- */}
-                {activeTab === 'hero' && (
-                    <div className="hero-manager">
-                        <div className="tab-header">
-                            <p className="tab-hint">
-                                Configure the main hero slider. You can enable slides per category. 
-                                Each active slide <strong>must have exactly 3 products</strong> selected.
-                            </p>
-                            <button className="admin-btn-save" onClick={saveHeroSlides}>Save Hero Settings</button>
-                        </div>
-
-                        <div className="slides-grid">
-                            {config?.heroSlides?.map((slide, index) => (
-                                <div key={slide.categorySlug} className={`slide-card ${slide.isActive ? 'active-slide' : ''}`}>
-                                    <div className="slide-card-header">
-                                        <div className="slide-title-group">
-                                            <h3>{categories.find(c => c.slug === slide.categorySlug)?.name || slide.categorySlug}</h3>
-                                            <label className="toggle-switch">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={slide.isActive} 
-                                                    onChange={(e) => handleHeroChange(index, 'isActive', e.target.checked)}
-                                                />
-                                                <span className="slider round"></span>
-                                            </label>
+                {isLoading ? (
+                    <div className="loading-state">Loading configuration...</div>
+                ) : (
+                    <div className="hm-slides-grid">
+                        {slides.map((slide, slideIndex) => {
+                            const hasProducts = slide.products.some(slot => slot && slot.product);
+                            return (
+                                <div className="hm-slide-card" key={slide.slug || slideIndex}>
+                                    <div className="hm-slide-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <h3>{slide.title}</h3>
+                                            <p>{slide.subtitle}</p>
                                         </div>
-                                    </div>
-
-                                    {slide.isActive && (
-                                        <div className="slide-form">
-                                            <input 
-                                                type="text" 
-                                                value={slide.title} 
-                                                onChange={(e) => handleHeroChange(index, 'title', e.target.value)} 
-                                                placeholder="Slide Title"
-                                                className="admin-input"
-                                            />
-                                            <input 
-                                                type="text" 
-                                                value={slide.subtitle} 
-                                                onChange={(e) => handleHeroChange(index, 'subtitle', e.target.value)} 
-                                                placeholder="Subtitle"
-                                                className="admin-input"
-                                            />
-                                            <textarea 
-                                                value={slide.description} 
-                                                onChange={(e) => handleHeroChange(index, 'description', e.target.value)} 
-                                                placeholder="Description"
-                                                className="admin-input"
-                                                rows="2"
-                                            ></textarea>
-                                            
-                                            <div className="color-picker-group">
-                                                <label>Accent Color</label>
-                                                <input 
-                                                    type="color" 
-                                                    value={slide.accentColor} 
-                                                    onChange={(e) => handleHeroChange(index, 'accentColor', e.target.value)} 
-                                                />
-                                            </div>
-
-                                            <div className="slide-products">
-                                                <div className="slide-products-header">
-                                                    <h4>Selected Products ({slide.products.length}/3)</h4>
-                                                    {slide.products.length < 3 && (
-                                                        <button 
-                                                            className="btn-text-primary" 
-                                                            onClick={() => openModal('hero', index)}
-                                                        >
-                                                            + Add Product
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <div className="selected-products-list">
-                                                    {slide.products.map(product => (
-                                                        <div key={product._id} className="selected-product-item">
-                                                            <div className="spi-img">
-                                                                <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} />
-                                                            </div>
-                                                            <span className="spi-name" title={product.name}>{product.name}</span>
-                                                            <button 
-                                                                className="btn-remove-spi" 
-                                                                onClick={() => removeProductFromHero(index, product._id)}
-                                                                title="Remove"
-                                                            >×</button>
-                                                        </div>
-                                                    ))}
-                                                    {slide.products.length === 0 && (
-                                                        <p className="empty-selection">No products selected yet.</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* --- TRENDING PRODUCTS TAB --- */}
-                {activeTab === 'trending' && (
-                    <div className="trending-manager">
-                        <div className="tab-header">
-                            <div>
-                                <p className="tab-hint">
-                                    Select exactly <strong>9 products</strong> for the trending grid.
-                                </p>
-                                <p className="tab-hint text-warning">
-                                    Rule: Maximum 2 products from any single category.
-                                </p>
-                            </div>
-                            <button className="admin-btn-save" onClick={saveTrendingProducts}>Save Trending</button>
-                        </div>
-
-                        <div className="trending-status">
-                            <h4>Selected: {config?.trendingProducts?.length || 0} / 9</h4>
-                            {config?.trendingProducts?.length < 9 && (
-                                <button className="admin-btn-secondary" onClick={() => openModal('trending')}>
-                                    + Add to Trending
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="trending-grid">
-                            {/* Empty slots placeholders (up to 9) */}
-                            {Array.from({ length: 9 }).map((_, i) => {
-                                const product = config?.trendingProducts?.[i];
-                                return product ? (
-                                    <div key={product._id} className="trending-slot filled">
-                                        <div className="ts-img">
-                                            <img src={product.images?.[0] || '/placeholder.png'} alt={product.name} />
-                                        </div>
-                                        <div className="ts-info">
-                                            <span className="ts-name">{product.name}</span>
-                                            <span className="ts-cat">{product.categorySlug}</span>
-                                        </div>
-                                        <button className="btn-remove-ts" onClick={() => removeProductFromTrending(product._id)}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                                            </svg>
+                                        <button 
+                                            className="btn-select-products"
+                                            onClick={() => openProductPicker(slideIndex)}
+                                        >
+                                            {hasProducts ? 'Edit Products' : 'Add Products'}
                                         </button>
                                     </div>
-                                ) : (
-                                    <div key={`empty-${i}`} className="trending-slot empty" onClick={() => openModal('trending')}>
-                                        <div className="ts-placeholder">
-                                            <span>+</span>
-                                            <p>Add Product</p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+                                    <div className="hm-product-slots">
+                                        {[0, 1, 2].map(slotIndex => {
+                                            const slotData = slide.products[slotIndex];
+                                            // Product data might be populated from backend OR temporarily stored during selection
+                                            const displayProduct = slotData && slotData.product && typeof slotData.product === 'object' 
+                                                ? slotData.product 
+                                                : slotData?._tempDisplay;
 
-                {/* --- CATEGORIES TAB --- */}
-                {activeTab === 'categories' && (
-                    <div className="categories-manager">
-                        <div className="tab-header">
-                            <p className="tab-hint">
-                                Select one product from each category to represent it with an image on the home page.
-                            </p>
-                        </div>
-
-                        <div className="category-display-grid">
-                            {categories.map(cat => {
-                                const selectedProduct = config?.populatedCategoryDisplay?.[cat.slug];
-                                return (
-                                    <div key={cat._id} className="cat-display-card">
-                                        <div className="cdc-header">
-                                            <h3>{cat.name}</h3>
-                                        </div>
-                                        <div className="cdc-image">
-                                            {selectedProduct ? (
-                                                <img src={selectedProduct.images?.[0] || '/placeholder.png'} alt={cat.name} />
-                                            ) : (
-                                                <div className="cdc-placeholder">No Image Selected</div>
-                                            )}
-                                        </div>
-                                        <div className="cdc-footer">
-                                            {selectedProduct ? (
-                                                <p className="cdc-prod-name">Using: {selectedProduct.name}</p>
-                                            ) : (
-                                                <p className="cdc-prod-name text-warning">Please select a product</p>
-                                            )}
-                                            <button 
-                                                className="admin-btn-secondary btn-sm"
-                                                onClick={() => openModal('category', null, cat.slug)}
-                                            >
-                                                {selectedProduct ? 'Change Product' : 'Select Product'}
-                                            </button>
-                                        </div>
+                                            return (
+                                                <div 
+                                                    className="hm-product-slot" 
+                                                    key={slotIndex}
+                                                    onClick={() => openProductPicker(slideIndex)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                {displayProduct ? (
+                                                    <>
+                                                        <img 
+                                                            src={displayProduct.images?.[0] || displayProduct.image || '/assets/images/placeholder.png'} 
+                                                            alt={displayProduct.name} 
+                                                            className="hm-slot-image" 
+                                                        />
+                                                        <div className="hm-slot-info">
+                                                            <div className="hm-slot-name">{displayProduct.name}</div>
+                                                            <div className="hm-slot-label">{slotData.label}</div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="hm-slot-empty">+</div>
+                                                        <div className="hm-slot-placeholder">Empty Slot</div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
-            {/* --- PRODUCT PICKER MODAL --- */}
+            {/* Product Picker Modal */}
             {isModalOpen && (
-                <div className="admin-modal-overlay" onClick={() => setIsModalOpen(false)}>
-                    <div className="admin-modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>
-                                Select Product 
-                                {modalContext?.type === 'hero' && ` for ${config.heroSlides[modalContext.slideIndex].title}`}
-                            </h3>
-                            <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
-                        </div>
-                        <div className="modal-body">
-                            <input 
-                                type="text" 
-                                className="admin-input search-input" 
-                                placeholder="Search products..." 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                autoFocus
-                            />
-                            <div className="modal-product-list">
-                                {filteredModalProducts.length === 0 ? (
-                                    <p className="no-results">No products found matching criteria.</p>
-                                ) : (
-                                    filteredModalProducts.map(p => (
-                                        <div key={p._id} className="modal-product-item" onClick={() => handleSelectProduct(p)}>
-                                            <img src={p.images?.[0] || '/placeholder.png'} alt={p.name} />
-                                            <div className="mpi-info">
-                                                <strong>{p.name}</strong>
-                                                <span>{p.categorySlug} | Rs. {p.price}</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
+                <div className="hm-modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="hm-modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="hm-modal-header">
+                            <div>
+                                <h3>Select Products for {slides[currentSlideIndex]?.title}</h3>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                                    Select exactly 3 products ({tempSelectedProducts.length}/3 selected)
+                                </p>
                             </div>
+                            <button className="btn-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+                        </div>
+                        <div className="hm-modal-body">
+                            {getAvailableProductsForCurrentSlide().length === 0 ? (
+                                <p>No products found in this category. Add some products first!</p>
+                            ) : (
+                                <div className="hm-product-list">
+                                    {getAvailableProductsForCurrentSlide().map(product => {
+                                        const isSelected = tempSelectedProducts.includes(product._id);
+                                        return (
+                                            <div 
+                                                className={`hm-product-item ${isSelected ? 'selected' : ''}`} 
+                                                key={product._id}
+                                                onClick={() => toggleProductSelection(product._id)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <div className="hm-product-item-info">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isSelected}
+                                                        onChange={() => {}} // Handled by parent div click
+                                                        style={{ marginRight: '10px' }}
+                                                    />
+                                                    <img src={product.images?.[0] || '/assets/images/placeholder.png'} alt={product.name} />
+                                                    <div>
+                                                        <div style={{fontWeight: 500}}>{product.name}</div>
+                                                        <div style={{fontSize: '0.8rem', color: '#666'}}>
+                                                            Rs. {product.discountPrice || product.price}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                        <div className="hm-modal-footer" style={{ padding: 'var(--space-md) var(--space-lg)', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button className="btn" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={handleConfirmSelection}
+                                disabled={tempSelectedProducts.length !== 3}
+                            >
+                                Confirm Selection
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+
+            {toast.message && (
+                <Toast 
+                    message={toast.message} 
+                    type={toast.type} 
+                    onClose={() => setToast({ message: '', type: 'success' })} 
+                />
+            )}
+        </AdminLayout>
     );
 };
 

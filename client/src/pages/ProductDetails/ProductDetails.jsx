@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar/Navbar';
 import Footer from '../../components/Footer/Footer';
-import ProductCard from '../../components/ProductCard/ProductCard';
+import { allProducts } from '../../data/productsData';
 import './ProductDetails.css';
 
 // Helper to generate SEO-friendly JSON-LD structured data
@@ -117,7 +117,7 @@ const ProductDetails = () => {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-    // Fetch product data — tries API first
+    // Fetch product data — tries API first, falls back to local data
     useEffect(() => {
         const fetchProduct = async () => {
             setLoading(true);
@@ -142,7 +142,19 @@ const ProductDetails = () => {
                     }
                 }
             } catch {
-                setError('Product not found or failed to load');
+                // Fallback to local data
+                const localProduct = allProducts.find((p) => p.slug === slug);
+                if (localProduct) {
+                    setProduct(localProduct);
+                    setRelatedProducts(
+                        allProducts
+                            .filter((p) => p.categorySlug === localProduct.categorySlug && p.slug !== slug)
+                            .slice(0, 4)
+                    );
+                    setError(null);
+                } else {
+                    setError('Product not found');
+                }
             } finally {
                 setLoading(false);
             }
@@ -341,13 +353,9 @@ const ProductDetails = () => {
                         <section className="pdp-gallery" aria-label="Product images">
                             <div className="pdp-main-image">
                                 <div className="pdp-image-badge">
-                                    {!product.inStock && <span className="badge-tag out-of-stock">Out of Stock</span>}
-                                    {product.inStock && product.isOffer && (
-                                        <span className="badge-tag offer">{product.offerLabel || 'Special Offer'}</span>
-                                    )}
-                                    {product.inStock && product.isBestseller && <span className="badge-tag bestseller">Bestseller</span>}
-                                    {product.inStock && product.isNew && <span className="badge-tag new">New</span>}
-                                    {product.inStock && hasDiscount && <span className="badge-tag sale">-{discountPercent}%</span>}
+                                    {product.isNew && <span className="badge-tag new">New</span>}
+                                    {product.isBestseller && <span className="badge-tag bestseller">Bestseller</span>}
+                                    {hasDiscount && <span className="badge-tag sale">-{discountPercent}%</span>}
                                 </div>
                                 <img
                                     src={product.images?.[selectedImageIndex] || product.images?.[0]}
@@ -419,6 +427,9 @@ const ProductDetails = () => {
                             <div className={`pdp-stock ${product.inStock !== false ? 'in-stock' : 'out-of-stock'}`}>
                                 <span className="stock-dot"></span>
                                 <span>{product.inStock !== false ? 'In Stock' : 'Out of Stock'}</span>
+                                {product.stock > 0 && (
+                                    <span className="stock-count">({product.stock} left)</span>
+                                )}
                             </div>
 
                             <hr className="pdp-divider" />
@@ -591,9 +602,34 @@ const ProductDetails = () => {
                             </div>
                             <div className="pdp-related-grid">
                                 {relatedProducts.map((rp) => (
-                                    <div key={rp._id || rp.slug} className="related-product-wrapper">
-                                        <ProductCard product={rp} />
-                                    </div>
+                                    <Link
+                                        to={`/products/${rp.slug}`}
+                                        key={rp._id || rp.slug}
+                                        className="product-card"
+                                        aria-label={`View ${rp.name}`}
+                                    >
+                                        <div className="product-image">
+                                            {rp.isNew && <span className="product-badge">New</span>}
+                                            <img
+                                                src={rp.images?.[0]}
+                                                alt={rp.name}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div className="product-info">
+                                            <h3 className="product-name">{rp.name}</h3>
+                                            <div className="product-price">
+                                                <span className="current-price">
+                                                    {formatPrice(rp.discountPrice || rp.price)}
+                                                </span>
+                                                {rp.discountPrice && (
+                                                    <span className="original-price">
+                                                        {formatPrice(rp.price)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
                                 ))}
                             </div>
                         </section>

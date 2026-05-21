@@ -286,6 +286,12 @@
     color: #e74c3c;
 }
 
+.stock-count {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    font-weight: 400;
+}
+
 /* Divider */
 .pdp-divider {
     width: 100%;

@@ -1,77 +1,127 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import ProductCard from '../ProductCard/ProductCard';
 import './TrendingProducts.css';
 
+// Sample data for initial display
+const sampleProducts = [
+    {
+        _id: '1',
+        name: 'Yarsagumba (Yarsha)',
+        slug: 'yarsagumba-yarsha',
+        shortDescription: 'Premium Himalayan Cordyceps for energy and vitality',
+        price: 15000,
+        discountPrice: 12999,
+        categorySlug: 'medicinal-herbs',
+        images: ['/assets/images/products/yarsagumba_yarsha.png'],
+        isNew: false,
+        isBestseller: true
+    },
+    {
+        _id: '2',
+        name: 'Rose Oil',
+        slug: 'rose-oil',
+        shortDescription: 'Premium rose essential oil for skin and aromatherapy',
+        price: 2500,
+        discountPrice: null,
+        categorySlug: 'essential-oils',
+        images: ['/assets/images/products/rose_oil.png'],
+        isNew: false,
+        isBestseller: true
+    },
+    {
+        _id: '3',
+        name: 'Ginseng',
+        slug: 'ginseng',
+        shortDescription: 'Natural energy booster and stress reliever',
+        price: 2500,
+        discountPrice: null,
+        categorySlug: 'medicinal-herbs',
+        images: ['/assets/images/products/ginseng.png'],
+        isNew: true,
+        isBestseller: false
+    },
+    {
+        _id: '4',
+        name: 'Black Seed Oil',
+        slug: 'black-seed-oil',
+        shortDescription: 'The blessed seed oil for immunity and wellness',
+        price: 1800,
+        discountPrice: 1499,
+        categorySlug: 'herbal-oils',
+        images: ['/assets/images/products/black_seed_oil.png'],
+        isNew: false,
+        isBestseller: true
+    },
+    {
+        _id: '5',
+        name: 'Lavender Oil',
+        slug: 'lavender-oil',
+        shortDescription: 'Calming lavender oil for sleep and relaxation',
+        price: 1200,
+        discountPrice: 999,
+        categorySlug: 'essential-oils',
+        images: ['/assets/images/products/lavender_oil.png'],
+        isNew: false,
+        isBestseller: true
+    },
+    {
+        _id: '6',
+        name: 'Shilajit',
+        slug: 'shilajit',
+        shortDescription: 'Himalayan mineral resin for strength and rejuvenation',
+        price: 3500,
+        discountPrice: 2999,
+        categorySlug: 'medicinal-herbs',
+        images: ['/assets/images/products/shilajit.png'],
+        isNew: false,
+        isBestseller: true
+    }
+];
+
 const TrendingProducts = () => {
-    const [trending, setTrending] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [products, setProducts] = useState(sampleProducts);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        const fetchTrending = async () => {
+        // Fetch trending products from API
+        const fetchProducts = async () => {
             try {
-                const res = await fetch('/api/homepage');
-                const data = await res.json();
-                if (data.trendingProducts && data.trendingProducts.length > 0) {
-                    setTrending(data.trendingProducts);
+                setLoading(true);
+                const response = await fetch('http://localhost:5000/api/products/trending');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.length > 0) {
+                        setProducts(data);
+                    }
                 }
             } catch (error) {
-                console.error("Failed to load trending products:", error);
+                console.log('Using sample products');
             } finally {
                 setLoading(false);
             }
         };
-        fetchTrending();
+
+        fetchProducts();
     }, []);
 
-    if (loading) {
-        return (
-            <section className="trending-section">
-                <div className="container">
-                    <div className="section-header">
-                        <h2>Trending Products</h2>
-                    </div>
-                    <div className="loading-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', opacity: 0.5 }}>
-                        {[...Array(9)].map((_, i) => (
-                            <div key={i} style={{ height: '350px', backgroundColor: 'var(--surface-color)', borderRadius: '16px' }} />
-                        ))}
-                    </div>
-                </div>
-            </section>
-        );
-    }
-
-    if (trending.length === 0) return null;
-
     return (
-        <section className="trending-section">
+        <section className="trending-products">
             <div className="container">
                 <div className="section-header">
-                    <h2>Trending Products</h2>
-                    <p>Discover our most loved organic products</p>
+                    <h2>Organic products that are currently trending</h2>
+                    <p>Discover our most popular products loved by customers worldwide</p>
                 </div>
-                
-                {/* Now using a 3x3 grid for 9 products */}
-                <div className="trending-grid">
-                    {trending.map((product, index) => (
-                        <div 
-                            key={product._id || index}
-                            className="trending-item"
-                            style={{ animationDelay: `${index * 0.1}s` }}
-                        >
-                            <ProductCard product={product} />
-                        </div>
+
+                <div className="trending-products-grid">
+                    {products.map((product) => (
+                        <ProductCard key={product._id} product={product} />
                     ))}
                 </div>
 
-                <div className="view-all-container">
-                    <Link to="/products" className="btn-view-all">
+                <div className="trending-products-footer">
+                    <a href="/shop" className="btn btn-secondary">
                         View All Products
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </Link>
+                    </a>
                 </div>
             </div>
         </section>
