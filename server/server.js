@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const adminProductRoutes = require('./routes/adminProductRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -18,12 +19,14 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from client build
+// Serve static files from client build and uploads
 app.use('/assets', express.static(path.join(__dirname, '../client/public/assets')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API Routes
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/admin/products', adminProductRoutes); // Must come before /api/admin to prevent route catching conflicts
 app.use('/api/admin', adminRoutes);
 
 // Health check
