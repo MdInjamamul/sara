@@ -5,6 +5,14 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import './Navbar.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const getImageUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `${API_URL.replace('/api', '')}${path}`;
+};
+
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -135,7 +143,7 @@ const Navbar = () => {
                             <div className="navbar-profile" ref={profileRef} onClick={() => setIsProfileOpen(!isProfileOpen)}>
                                 <div className="profile-avatar">
                                     {user.photo ? (
-                                        <img src={user.photo} alt="Profile" />
+                                        <img src={getImageUrl(user.photo)} alt="Profile" />
                                     ) : (
                                         <div className="avatar-placeholder">{user.name.charAt(0).toUpperCase()}</div>
                                     )}

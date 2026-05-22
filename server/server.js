@@ -16,6 +16,8 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const userManagementRoutes = require('./routes/userManagementRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const blogRoutes = require('./routes/blogRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -44,6 +46,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', userManagementRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/blog', blogRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
