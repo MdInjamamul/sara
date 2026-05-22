@@ -1,0 +1,488 @@
+/* ========================================
+   Contact Page — SARA Herbal Company
+   ======================================== */
+
+.contact-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg, #fafaf6);
+}
+
+/* ---------- Hero Banner ---------- */
+.contact-hero {
+  position: relative;
+  background: linear-gradient(135deg, #1a3409 0%, var(--color-primary, #2d5016) 50%, #3d6b1e 100%);
+  padding: 5rem 1.5rem 3.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.contact-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(232, 165, 48, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.contact-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.contact-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.contact-hero-title {
+  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-size: 2.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.contact-hero-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin: 0 0 1.25rem;
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+
+.contact-breadcrumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.contact-breadcrumb a {
+  color: var(--color-accent, #e8a530);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.contact-breadcrumb a:hover {
+  color: #f0bb50;
+}
+
+.breadcrumb-sep {
+  opacity: 0.5;
+}
+
+/* ---------- Main Content ---------- */
+.contact-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 4rem;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ---------- Info Card (Left) ---------- */
+.contact-info-card {
+  background: linear-gradient(160deg, #f7faf4 0%, #eef5e8 100%);
+  border: 1px solid var(--color-border, #e0e0d8);
+  border-radius: var(--radius-md, 12px);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-info-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(45, 80, 22, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.info-card-title {
+  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text, #1a1a18);
+  margin: 0 0 0.25rem;
+}
+
+.info-card-subtitle {
+  font-size: 0.95rem;
+  color: var(--color-primary, #2d5016);
+  font-weight: 600;
+  margin: 0 0 1.75rem;
+  letter-spacing: 0.02em;
+}
+
+/* Info Items */
+.info-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+}
+
+.info-item-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: rgba(45, 80, 22, 0.1);
+  color: var(--color-primary, #2d5016);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s, transform 0.25s;
+}
+
+.info-item:hover .info-item-icon {
+  background: var(--color-primary, #2d5016);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.info-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-top: 2px;
+}
+
+.info-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #7a7a6e);
+}
+
+.info-value {
+  font-size: 0.95rem;
+  color: var(--color-text, #1a1a18);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.info-link {
+  text-decoration: none;
+  color: var(--color-primary, #2d5016);
+  transition: color 0.2s;
+}
+
+.info-link:hover {
+  color: var(--color-accent, #e8a530);
+}
+
+/* Office Hours */
+.office-hours {
+  background: rgba(45, 80, 22, 0.04);
+  border-radius: var(--radius-sm, 8px);
+  padding: 1.25rem 1.25rem;
+  margin-bottom: 1.75rem;
+  border: 1px solid rgba(45, 80, 22, 0.08);
+}
+
+.office-hours-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-primary, #2d5016);
+  margin-bottom: 0.875rem;
+}
+
+.office-hours-header h3 {
+  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text, #1a1a18);
+}
+
+.hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hours-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.hours-day {
+  color: var(--color-text, #1a1a18);
+  font-weight: 500;
+}
+
+.hours-time {
+  color: var(--color-text-muted, #7a7a6e);
+  font-weight: 500;
+}
+
+.hours-time.closed {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* Social Links */
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(45, 80, 22, 0.08);
+  color: var(--color-primary, #2d5016);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s, color 0.25s, transform 0.25s;
+  text-decoration: none;
+}
+
+.social-link:hover {
+  background: var(--color-primary, #2d5016);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* ---------- Form Card (Right) ---------- */
+.contact-form-card {
+  background: #fff;
+  border-radius: var(--radius-md, 12px);
+  padding: 2.25rem 2rem;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.08));
+  border: 1px solid var(--color-border, #e0e0d8);
+}
+
+.form-card-title {
+  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text, #1a1a18);
+  margin: 0 0 0.35rem;
+}
+
+.form-card-subtitle {
+  font-size: 0.92rem;
+  color: var(--color-text-muted, #7a7a6e);
+  margin: 0 0 1.75rem;
+  line-height: 1.5;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text, #1a1a18);
+}
+
+.required {
+  color: #c0392b;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.92rem;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  border: 1.5px solid var(--color-border, #e0e0d8);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-bg, #fafaf6);
+  color: var(--color-text, #1a1a18);
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+  box-sizing: border-box;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--color-text-muted, #7a7a6e);
+  opacity: 0.65;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--color-primary, #2d5016);
+  box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.12);
+  background: #fff;
+}
+
+.form-group textarea {
+  min-height: 150px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Submit Button */
+.submit-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary, #2d5016) 0%, #3d6b1e 100%);
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  margin-top: 0.5rem;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(45, 80, 22, 0.3);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.btn-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: contact-spin 0.7s linear infinite;
+}
+
+@keyframes contact-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+  .contact-hero {
+    padding: 4rem 1.25rem 2.75rem;
+  }
+
+  .contact-hero-title {
+    font-size: 2.1rem;
+  }
+
+  .contact-main {
+    padding: 2.5rem 1.25rem 3rem;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .contact-info-card,
+  .contact-form-card {
+    padding: 1.75rem 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .contact-hero {
+    padding: 3.5rem 1rem 2.25rem;
+  }
+
+  .contact-hero-title {
+    font-size: 1.75rem;
+  }
+
+  .contact-hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .contact-main {
+    padding: 2rem 1rem 2.5rem;
+  }
+
+  .contact-info-card,
+  .contact-form-card {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .info-card-title,
+  .form-card-title {
+    font-size: 1.3rem;
+  }
+
+  .submit-btn {
+    padding: 0.8rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
