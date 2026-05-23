@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
+import { useNotification } from '../../context/NotificationContext';
+import NotificationDropdown from '../NotificationDropdown/NotificationDropdown';
 import './Navbar.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -21,8 +23,11 @@ const Navbar = () => {
     const { user, logout } = useAuth();
     const { cartCount, toggleCart } = useCart();
     const { wishlistCount, toggleWishlistSidebar } = useWishlist();
+    const { unreadCount } = useNotification();
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const profileRef = useRef(null);
     const searchRef = useRef(null);
+    const notificationRef = useRef(null);
     
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +41,9 @@ const Navbar = () => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setIsSearchOpen(false);
             }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setIsNotificationOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -46,6 +54,7 @@ const Navbar = () => {
         setIsMenuOpen(false);
         setIsProfileOpen(false);
         setIsSearchOpen(false);
+        setIsNotificationOpen(false);
     }, [location.pathname]);
 
     const toggleMenu = () => {
@@ -132,12 +141,13 @@ const Navbar = () => {
 
                     {user && (
                         <>
-                            <div className="navbar-icon notification-icon">
+                            <div className="navbar-icon notification-icon" ref={notificationRef} onClick={() => setIsNotificationOpen(!isNotificationOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                 </svg>
-                                <span className="notification-badge">3</span>
+                                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+                                <NotificationDropdown isOpen={isNotificationOpen} onClose={() => setIsNotificationOpen(false)} />
                             </div>
 
                             <div className="navbar-profile" ref={profileRef} onClick={() => setIsProfileOpen(!isProfileOpen)}>

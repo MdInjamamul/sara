@@ -18,6 +18,7 @@ const userManagementRoutes = require('./routes/userManagementRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const blogRoutes = require('./routes/blogRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/admin', userManagementRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
