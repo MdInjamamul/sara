@@ -25,6 +25,7 @@ import BlogPost from './pages/Blog/BlogPost';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { NotificationProvider } from './context/NotificationContext';
 import CartSidebar from './components/CartSidebar/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar/WishlistSidebar';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
@@ -33,8 +34,9 @@ import './styles/index.css';
 function App() {
   return (
     <AuthProvider>
-      <WishlistProvider>
-        <CartProvider>
+      <NotificationProvider>
+        <WishlistProvider>
+          <CartProvider>
           <Router>
         <div className="app">
           <Routes>
@@ -67,8 +69,9 @@ function App() {
           <WishlistSidebar />
         </div>
       </Router>
-        </CartProvider>
-      </WishlistProvider>
+          </CartProvider>
+        </WishlistProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

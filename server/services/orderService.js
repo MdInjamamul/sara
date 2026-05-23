@@ -2,6 +2,7 @@ const orderRepository = require('../repositories/orderRepository');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const AppError = require('../utils/AppError');
+const Notification = require('../models/Notification');
 const { sendEmail } = require('./emailService');
 const { generateInvoiceHTML } = require('../templates/invoiceTemplate');
 
@@ -219,6 +220,16 @@ const updateOrderStatus = async (orderId, newStatus, cancelReason = '') => {
         }
 
         await orderRepository.update(order);
+
+        // Create notification for user
+        await Notification.create({
+            user: order.user._id || order.user,
+            title: 'Order Cancelled',
+            message: `Your order #${orderId.toString().substring(orderId.toString().length - 8).toUpperCase()} has been cancelled. Reason: ${cancelReason.trim()}`,
+            type: 'order_status',
+            link: '/my-orders'
+        });
+
         return orderRepository.findById(orderId);
     }
 
@@ -238,6 +249,15 @@ const updateOrderStatus = async (orderId, newStatus, cancelReason = '') => {
     }
 
     await orderRepository.update(order);
+
+    // Create notification for user
+    await Notification.create({
+        user: order.user._id || order.user,
+        title: 'Order Status Updated',
+        message: `Your order #${orderId.toString().substring(orderId.toString().length - 8).toUpperCase()} is now ${newStatus}.`,
+        type: 'order_status',
+        link: '/my-orders'
+    });
 
     // Send invoice email when status changes to 'Confirmed'
     if (newStatus === 'Confirmed') {
